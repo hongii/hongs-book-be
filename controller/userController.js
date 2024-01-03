@@ -49,7 +49,8 @@ const join = async (req, res) => {
 
     return res
       .status(StatusCodes.CREATED)
-      .json({ message: "회원가입이 완료되었습니다. 로그인을 진행해주세요." });
+      .json({ message: "회원가입이 완료되었습니다. 로그인을 진행해주세요." })
+      .end();
   } catch (err) {
     if (err.code && err.code.startsWith("ER_")) {
       // 데이터베이스 오류일 경우 -> MairaDB에서는 오류코드가 "ER_"로 시작됨
@@ -89,9 +90,12 @@ const login = async (req, res) => {
       }
     }
 
-    return res.status(StatusCodes.UNAUTHORIZED).json({
-      message: "이메일 또는 비밀번호를 잘못 입력했습니다. 입력하신 내용을 다시 확인해주세요.",
-    });
+    return res
+      .status(StatusCodes.UNAUTHORIZED)
+      .json({
+        message: "이메일 또는 비밀번호를 잘못 입력했습니다. 입력하신 내용을 다시 확인해주세요.",
+      })
+      .end();
   } catch (err) {
     if (err.code && err.code.startsWith("ER_")) {
       sqlError(res, err);
@@ -133,8 +137,12 @@ const performPwdReset = async (req, res) => {
   try {
     const { email, password: newPW } = req.body;
 
-    const sql = "UPDATE users SET password=? WHERE email=?";
-    const values = [newPW, email];
+    // 비밀번호 암호화
+    const salt = crypto.randomBytes(32).toString("base64");
+    const hashPassword = crypto.pbkdf2Sync(newPW, salt, 10000, 32, "sha512").toString("base64");
+
+    const sql = "UPDATE users SET password=?, salt=? WHERE email=?";
+    const values = [hashPassword, salt, email];
     const [results] = await conn.query(sql, values);
     console.log(results);
     if (results.affectedRows > 0) {
