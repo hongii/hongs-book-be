@@ -7,17 +7,6 @@ const dotenv = require("dotenv");
 dotenv.config();
 const privateKey = process.env.PRIVATE_KEY;
 
-const validate = (req, res, next) => {
-  const validateErr = validationResult(req);
-  if (validateErr.isEmpty()) {
-    return next();
-  }
-
-  console.error(validateErr.array());
-  const errMsg = validateErr.array().map((obj) => obj.msg);
-  return res.status(StatusCodes.BAD_REQUEST).json({ message: errMsg }).end();
-};
-
 const serverError = (res, err) => {
   console.error(res, err);
   return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
@@ -68,12 +57,55 @@ const join = async (req, res) => {
 };
 
 /* 로그인 */
-const login = (req, res) => {};
+const login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    let sql = "SELECT * FROM users WHERE email=?";
+    let values = [email, password];
+    const [results] = await conn.query(sql, values);
+    const targetUser = results[0];
+    if (targetUser && targetUser.password === password) {
+      let accessToken = jwt.sign({ email: targetUser.email }, privateKey, {
+        expiresIn: "10m",
+        issuer: "euni",
+      });
+
+      res.cookie("access_token", accessToken, { httpOnly: true });
+      return res.status(StatusCodes.OK).json({ data: targetUser });
+    }
+
+    return res
+      .status(StatusCodes.UNAUTHORIZED)
+      .json({
+        message: "이메일 또는 비밀번호를 잘못 입력했습니다. 입력하신 내용을 다시 확인해주세요.",
+      })
+      .end();
+  } catch (err) {
+    if (err.code && err.code.startsWith("ER_")) {
+      sqlError(res, err);
+    } else {
+      serverError(res, err);
+    }
+  }
+};
 
 /* 비밀번호 초기화 요청 */
 const requestPwdReset = (req, res) => {};
 
 /* 비밀번호 초기화 */
 const performPwdReset = (req, res) => {};
+
+/* 사용자 입력값 유효성 검증 미들웨어 */
+const validate = (req, res, next) => {
+  const validateErr = validationResult(req);
+  if (validateErr.isEmpty()) {
+    return next();
+  }
+
+  console.error(validateErr.array());
+  const errMsg = validateErr.array().map((obj) => obj.msg);
+  return res.status(StatusCodes.BAD_REQUEST).json({ message: errMsg }).end();
+};
 
 module.exports = { join, login, requestPwdReset, performPwdReset, validate };

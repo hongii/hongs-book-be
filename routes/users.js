@@ -30,7 +30,17 @@ router.post(
   ],
   join,
 );
-router.post("/login", login);
+
+router.post(
+  "/login",
+  [
+    body("email").notEmpty().withMessage("이메일을 입력해주세요."),
+    body("password").notEmpty().withMessage("비밀번호를 입력해주세요."),
+    validate,
+  ],
+  login,
+);
+
 router.post("/reset", requestPwdReset);
 router.put("/reset", performPwdReset);
 
