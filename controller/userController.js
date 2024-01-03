@@ -67,25 +67,31 @@ const login = async (req, res) => {
     const { email, password } = req.body;
 
     const sql = "SELECT * FROM users WHERE email=?";
-    const values = [email, password];
-    const [results] = await conn.query(sql, values);
+    const [results] = await conn.query(sql, email);
     const targetUser = results[0];
-    if (targetUser && targetUser.password === password) {
-      let accessToken = jwt.sign({ email: targetUser.email }, privateKey, {
-        expiresIn: "10m",
-        issuer: "euni",
-      });
 
-      res.cookie("access_token", accessToken, { httpOnly: true });
-      return res.status(StatusCodes.OK).json({ data: targetUser });
+    if (targetUser) {
+      // db에 저장된 salt값으로 입력받은 비밀번호를 암호화
+      const salt = targetUser.salt;
+      const hashPassword = crypto
+        .pbkdf2Sync(password, salt, 10000, 32, "sha512")
+        .toString("base64");
+
+      // db에 저장되어 있는 암호화된 비밀번호와 일치하는지 확인
+      if (targetUser.password === hashPassword) {
+        let accessToken = jwt.sign({ email: targetUser.email }, privateKey, {
+          expiresIn: "10m",
+          issuer: "euni",
+        });
+
+        res.cookie("access_token", accessToken, { httpOnly: true });
+        return res.status(StatusCodes.OK).json({ data: targetUser });
+      }
     }
 
-    return res
-      .status(StatusCodes.UNAUTHORIZED)
-      .json({
-        message: "이메일 또는 비밀번호를 잘못 입력했습니다. 입력하신 내용을 다시 확인해주세요.",
-      })
-      .end();
+    return res.status(StatusCodes.UNAUTHORIZED).json({
+      message: "이메일 또는 비밀번호를 잘못 입력했습니다. 입력하신 내용을 다시 확인해주세요.",
+    });
   } catch (err) {
     if (err.code && err.code.startsWith("ER_")) {
       sqlError(res, err);
