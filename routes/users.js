@@ -41,7 +41,25 @@ router.post(
   login,
 );
 
-router.post("/reset", requestPwdReset);
-router.put("/reset", performPwdReset);
+router.post(
+  "/reset",
+  [body("email").notEmpty().withMessage("이메일을 입력해주세요."), validate],
+  requestPwdReset,
+);
+
+router.put(
+  "/reset",
+  [
+    body("email").notEmpty().withMessage("이메일을 입력해주세요."),
+    body("password")
+      .notEmpty()
+      .withMessage("새롭게 변경할 비밀번호를 입력해주세요.")
+      .bail()
+      .isLength({ min: 4, max: 16 })
+      .withMessage("비밀번호는 4~16자 이내로 입력해주세요."),
+    validate,
+  ],
+  performPwdReset,
+);
 
 module.exports = router;

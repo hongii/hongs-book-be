@@ -61,8 +61,8 @@ const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    let sql = "SELECT * FROM users WHERE email=?";
-    let values = [email, password];
+    const sql = "SELECT * FROM users WHERE email=?";
+    const values = [email, password];
     const [results] = await conn.query(sql, values);
     const targetUser = results[0];
     if (targetUser && targetUser.password === password) {
@@ -90,11 +90,60 @@ const login = async (req, res) => {
   }
 };
 
-/* 비밀번호 초기화 요청 */
-const requestPwdReset = (req, res) => {};
+/* 비밀번호 초기화 요청(로그인 하기 전, 비밀번호 찾기 기능) */
+const requestPwdReset = async (req, res) => {
+  try {
+    const { email } = req.body;
 
-/* 비밀번호 초기화 */
-const performPwdReset = (req, res) => {};
+    const sql = "SELECT * FROM users WHERE email=?";
+    const [results] = await conn.query(sql, email);
+    const targetUser = results[0];
+    if (targetUser) {
+      return res.status(StatusCodes.OK).json({ email: targetUser.email });
+    }
+
+    return res
+      .status(StatusCodes.NOT_FOUND)
+      .json({
+        message: "존재하지 않는 이메일입니다. 가입한 이메일 정보를 정확히 입력해주세요.",
+      })
+      .end();
+  } catch (err) {
+    if (err.code && err.code.startsWith("ER_")) {
+      sqlError(res, err);
+    } else {
+      serverError(res, err);
+    }
+  }
+};
+
+/* 비밀번호 초기화(새로운 비밀번호로 변경하는 기능) */
+const performPwdReset = async (req, res) => {
+  try {
+    const { email, password: newPW } = req.body;
+
+    const sql = "UPDATE users SET password=? WHERE email=?";
+    const values = [newPW, email];
+    const [results] = await conn.query(sql, values);
+    console.log(results);
+    if (results.affectedRows > 0) {
+      return res.status(StatusCodes.OK).json({ message: "비밀번호가 변경되었습니다." });
+    }
+
+    return res
+      .status(StatusCodes.BAD_REQUEST)
+      .json({
+        message: "잘못된 요청입니다. 입력한 정보를 다시 확인해주세요.",
+      })
+      .end();
+  } catch (err) {
+    if (err.code && err.code.startsWith("ER_")) {
+      sqlError(res, err);
+    } else {
+      serverError(res, err);
+    }
+  }
+};
 
 /* 사용자 입력값 유효성 검증 미들웨어 */
 const validate = (req, res, next) => {
