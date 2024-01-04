@@ -4,11 +4,11 @@ const app = express();
 const dotenv = require("dotenv");
 dotenv.config();
 
-const usersRouter = require("./routes/users");
-const booksRouter = require("./routes/books");
-const cartsRouter = require("./routes/carts");
-const likesRouter = require("./routes/likes");
-const ordersRouter = require("./routes/orders");
+const usersRouter = require("./src/routes/users");
+const booksRouter = require("./src/routes/books");
+const cartsRouter = require("./src/routes/carts");
+const likesRouter = require("./src/routes/likes");
+const ordersRouter = require("./src/routes/orders");
 
 app.use("/api/users", usersRouter);
 app.use("/api/books", booksRouter);
