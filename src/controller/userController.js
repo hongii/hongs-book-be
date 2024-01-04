@@ -1,29 +1,12 @@
-const conn = require("../mariadb").promise();
-const { validationResult } = require("express-validator");
+const conn = require("../../mariadb").promise();
 const { StatusCodes } = require("http-status-codes");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
+const { sqlError, serverError } = require("../utils/errorHandler");
 
 const dotenv = require("dotenv");
 dotenv.config();
 const privateKey = process.env.PRIVATE_KEY;
-
-const serverError = (res, err) => {
-  console.error(res, err);
-  return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-    message: "서버 오류가 발생했습니다. 잠시 후에 다시 시도해주세요.",
-  });
-};
-
-const sqlError = (res, err) => {
-  console.error(err);
-  return res
-    .status(StatusCodes.BAD_REQUEST)
-    .json({
-      message: "잘못된 정보를 입력하였습니다. 확인 후 다시 입력해주세요.",
-    })
-    .end();
-};
 
 /* 회원 가입 */
 const join = async (req, res) => {
@@ -164,16 +147,4 @@ const performPwdReset = async (req, res) => {
   }
 };
 
-/* 사용자 입력값 유효성 검증 미들웨어 */
-const validate = (req, res, next) => {
-  const validateErr = validationResult(req);
-  if (validateErr.isEmpty()) {
-    return next();
-  }
-
-  console.error(validateErr.array());
-  const errMsg = validateErr.array().map((obj) => obj.msg);
-  return res.status(StatusCodes.BAD_REQUEST).json({ message: errMsg }).end();
-};
-
-module.exports = { join, login, requestPwdReset, performPwdReset, validate };
+module.exports = { join, login, requestPwdReset, performPwdReset };

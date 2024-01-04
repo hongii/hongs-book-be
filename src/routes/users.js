@@ -3,13 +3,8 @@ const router = express.Router();
 router.use(express.json());
 
 const { body } = require("express-validator");
-const {
-  join,
-  login,
-  requestPwdReset,
-  performPwdReset,
-  validate,
-} = require("../controller/userController");
+const { join, login, requestPwdReset, performPwdReset } = require("../controller/userController");
+const validate = require("../middleware/validationMiddleware");
 
 router.post(
   "/join",
