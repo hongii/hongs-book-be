@@ -2,15 +2,30 @@ const conn = require("../../mariadb").promise();
 const { StatusCodes } = require("http-status-codes");
 const { sqlError, serverError } = require("../utils/errorHandler");
 
-/* 전체 도서 조회 */
-const getTotalBooks = async (req, res) => {
+/* 도서 목록 조회 */
+const getBooks = async (req, res) => {
   try {
-    const sql = "SELECT * FROM books";
-    const [results] = await conn.query(sql);
-    if (results.length > 0) {
-      return res.status(StatusCodes.OK).json(results);
+    const { category_id, isNew } = req.query;
+
+    if (category_id) {
+      // 카테고리 별 도서 목록 조회
+      const sql = "SELECT * FROM books WHERE category_id=?";
+      const [results] = await conn.query(sql, category_id);
+      if (results.length > 0) {
+        return res.status(StatusCodes.OK).json(results[0]);
+      }
+      return res
+        .status(StatusCodes.NO_CONTENT)
+        .json({ message: "해당 카테고리에 해당하는 도서가 존재하지 않습니다." });
+    } else {
+      // 전체 도서 목록 조회
+      const sql = "SELECT * FROM books";
+      const [results] = await conn.query(sql);
+      if (results.length > 0) {
+        return res.status(StatusCodes.OK).json(results);
+      }
+      return res.status(StatusCodes.NO_CONTENT).json({ message: "도서 목록이 비어있습니다." });
     }
-    return res.status(StatusCodes.NO_CONTENT).json({ message: "도서 목록이 비어있습니다." });
   } catch (err) {
     if (err.code && err.code.startsWith("ER_")) {
       sqlError(res, err);
@@ -62,4 +77,4 @@ const getCategoryBooks = async (req, res) => {
   }
 };
 
-module.exports = { getTotalBooks, getBookInfo, getCategoryBooks };
+module.exports = { getBooks, getBookInfo };
