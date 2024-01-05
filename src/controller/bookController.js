@@ -40,10 +40,15 @@ const getBookInfo = async (req, res) => {
   try {
     const { bookId } = req.params;
 
-    const sql = "SELECT * FROM books WHERE id=?";
+    const sql = `SELECT * 
+      FROM books AS b INNER JOIN categories AS c USING (category_id) 
+      WHERE b.id=?`;
     const [results] = await conn.query(sql, +bookId);
     if (results.length > 0) {
-      return res.status(StatusCodes.OK).json(results[0]);
+      const data = Object.fromEntries(
+        Object.entries(results[0]).filter(([key]) => key !== "category_id"),
+      );
+      return res.status(StatusCodes.OK).json({ data });
     }
     return res.status(StatusCodes.NOT_FOUND).json({ message: "존재하지 않는 도서입니다." });
   } catch (err) {

@@ -25,3 +25,12 @@ ALTER TABLE books CHANGE COLUMN `description` detail text;
 INSERT INTO books(title, category_id, form , summary, detail , author, pages, isbn,contents, price, published_date) 
 values("javascript란?", 1, "ebook", "javascript 재밌다.", "javascript의 모든 것!", "kim", 300, "12341234123", "목차
 javascript에 대해 배워보자.",2000, "2024-01-01"  );
+
+--books 테이블의 description컬럼명을 detail로 변경, 데이터타입은 그대로 text
+ALTER TABLE books CHANGE COLUMN `description` detail text; 
+
+-- books 테이블의 category_id 컬럼을 FK로 설정하기
+ALTER TABLE `BookShop`.`books` 
+ADD CONSTRAINT `category_id`
+  FOREIGN KEY (`category_id`)
+  REFERENCES `BookShop`.`categories` (`id`)
