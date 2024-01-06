@@ -34,3 +34,9 @@ ALTER TABLE `BookShop`.`books`
 ADD CONSTRAINT `category_id`
   FOREIGN KEY (`category_id`)
   REFERENCES `BookShop`.`categories` (`id`)
+
+-- likes 테이블에 데이터 추가
+INSERT INTO likes(user_id, liked_book_id) VALUES(1,  1);
+
+-- 좋아요 취소
+DELETE FROM likes WHERE user_id=1 AND liked_book_id=1;
