@@ -5,11 +5,18 @@ const { sqlError, serverError } = require("../utils/errorHandler");
 /* 도서 목록 조회 */
 const getBooksInfo = async (req, res) => {
   try {
-    const { category_id: categoryId, new: isNew } = req.query;
+    // limit : 한 page당 보여줄 도서 갯수, page : 현재 페이지 번호
+    // offset = (page - 1) * limit
+    let { category_id: categoryId, new: isNew, page, limit } = req.query;
+
     // 아래 변수들의 default값은 전체 도서 목록 조회 기준
-    let sql = "SELECT * FROM books",
+    limit = parseInt(limit);
+    let offset = (+page - 1) * limit;
+    let sql = `SELECT * 
+      FROM books AS b INNER JOIN categories AS c USING (category_id)`,
+      tailSql = " LIMIT ? OFFSET ?",
       errMessage = "조회 가능한 도서 목록이 비어 있습니다.",
-      values = null;
+      values = [limit, offset];
 
     if (categoryId) {
       let preSql = "SELECT category_name FROM categories WHERE category_id=?";
@@ -20,14 +27,16 @@ const getBooksInfo = async (req, res) => {
         if (isNew) {
           // 카테고리 별 신간 도서 목록 조회(출판일이 현재 일자 기준으로 30일 이내인 도서)
           sql = `${sql} WHERE category_id=? AND published_date BETWEEN DATE_SUB(CURDATE(), INTERVAL 30 DAY) AND CURDATE()`;
-          values = categoryId;
-          errMessage = `${categoryName} 카테고리에는 지난 30일 이내에 출간된 새로운 도서가 없습니다.`;
+          values = [categoryId, ...values];
+          errMessage =
+            page > 1
+              ? null
+              : `${categoryName} 카테고리에는 지난 30일 이내에 출간된 새로운 도서가 없습니다.`;
         } else {
           // 카테고리 별 도서 목록 조회
           sql = `${sql} WHERE category_id=?`;
-          console.log(sql);
-          values = categoryId;
-          errMessage = `${categoryName} 카테고리에 해당하는 도서가 없습니다.`;
+          values = [categoryId, ...values];
+          errMessage = page > 1 ? null : `${categoryName} 카테고리에 해당하는 도서가 없습니다.`;
         }
       } else {
         // 존재하지 않는 카테고리id로 요청 들어온 경우
@@ -41,12 +50,20 @@ const getBooksInfo = async (req, res) => {
       errMessage = "30일 이내에 출간된 신간 도서가 없습니다.";
     }
 
-    const [results] = await conn.query(sql, values);
+    const [results] = await conn.query(sql + tailSql, values);
     if (results.length > 0) {
-      return res.status(StatusCodes.OK).json({ data: results });
+      const data = Object.fromEntries(
+        Object.entries(results[0]).filter(([key]) => key !== "category_id"),
+      );
+      return res.status(StatusCodes.OK).json({ data });
     }
 
-    return res.status(StatusCodes.NOT_FOUND).json({ message: errMessage });
+    if (errMessage) {
+      // 요청한 조건에 부합하는 도서가 존재하지 않는 경우
+      return res.status(StatusCodes.NOT_FOUND).json({ message: errMessage });
+    }
+    // 해당 페이지에서 조회된 도서 목록이 없는 경우(바로 직전 페이지가 마지막 페이지라는 뜻)
+    return res.status(StatusCodes.NO_CONTENT).json();
   } catch (err) {
     if (err.code && err.code.startsWith("ER_")) {
       sqlError(res, err);
