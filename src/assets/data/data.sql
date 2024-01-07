@@ -40,3 +40,17 @@ INSERT INTO likes(user_id, liked_book_id) VALUES(1,  1);
 
 -- 좋아요 취소
 DELETE FROM likes WHERE user_id=1 AND liked_book_id=1;
+
+-- 중복된 레코드 삽입 방지하기 위해 (user_id, liked_book_id) 조합을 PK로 설정
+ALTER TABLE likes ADD PRIMARY KEY (user_id, liked_book_id);
+
+-- book_id가 3인 도서에 좋아요를 누른 갯수
+SELECT count(*) AS liked_book_cnt FROM likes WHERE liked_book_id=3;
+
+-- books테이블과 categories테이블을 JOIN해서 도서에 해당하는 카테고리 이름을 합친 테이블에,
+-- 각 도서에 해당하는 좋아요 수(=likes)와 현재 사용자가 해당 도서를 좋아요 눌렀는지에 대한 정보(=is_liked)에 대한 컬럼을 생성한 테이블을 출력 
+SELECT b.*, c.category_name,
+      (SELECT COUNT(*) FROM likes WHERE liked_book_id = b.id) AS likes,
+      EXISTS (SELECT 1 FROM likes WHERE user_id = 1 AND liked_book_id = 1) AS is_liked
+FROM books AS b INNER JOIN categories AS c USING (category_id)
+WHERE b.id = 1;
