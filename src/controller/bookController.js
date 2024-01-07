@@ -12,8 +12,9 @@ const getBooksInfo = async (req, res) => {
     // 아래 변수들의 default값은 전체 도서 목록 조회 기준
     limit = parseInt(limit);
     let offset = (+page - 1) * limit;
-    let sql = `SELECT * 
-      FROM books AS b INNER JOIN categories AS c USING (category_id)`,
+    let sql = `SELECT b.*, c.category_name, 
+    (SELECT count(*) FROM likes WHERE likes.liked_book_id=b.id) AS likes 
+    FROM books AS b INNER JOIN categories AS c USING (category_id)`,
       tailSql = " LIMIT ? OFFSET ?",
       errMessage = "조회 가능한 도서 목록이 비어 있습니다.",
       values = [limit, offset];
@@ -52,9 +53,10 @@ const getBooksInfo = async (req, res) => {
 
     const [results] = await conn.query(sql + tailSql, values);
     if (results.length > 0) {
-      const data = Object.fromEntries(
-        Object.entries(results[0]).filter(([key]) => key !== "category_id"),
-      );
+      const data = Object.entries(results)
+        .filter(([key]) => key !== "category_id")
+        .map((arr) => arr[1]);
+      console.log(data);
       return res.status(StatusCodes.OK).json({ data });
     }
 
@@ -77,16 +79,21 @@ const getBooksInfo = async (req, res) => {
 const getBookDetail = async (req, res) => {
   try {
     const { bookId } = req.params;
+    const { user_id: userId } = req.body;
 
-    const sql = `SELECT * 
+    const sql = `
+      SELECT b.*, c.category_name,
+        (SELECT COUNT(*) FROM likes WHERE liked_book_id = b.id) AS likes,
+        EXISTS (SELECT 1 FROM likes WHERE user_id = ? AND liked_book_id = ?) AS is_liked 
       FROM books AS b INNER JOIN categories AS c USING (category_id) 
-      WHERE b.id=?`;
-    const [results] = await conn.query(sql, +bookId);
+      WHERE b.id = ?`;
+    const values = [+userId, +bookId, +bookId];
+    const [results] = await conn.query(sql, values);
     if (results.length > 0) {
       const data = Object.fromEntries(
         Object.entries(results[0]).filter(([key]) => key !== "category_id"),
       );
-      return res.status(StatusCodes.OK).json({ data });
+      return res.status(StatusCodes.OK).json({ data }); // 카테고리 id 정보도 함께 보내려면 { data: results } 이렇게 보내주면 됨
     }
     return res.status(StatusCodes.NOT_FOUND).json({ message: "존재하지 않는 도서입니다." });
   } catch (err) {
