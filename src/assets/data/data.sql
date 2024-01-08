@@ -54,3 +54,6 @@ SELECT b.*, c.category_name,
       EXISTS (SELECT 1 FROM likes WHERE user_id = 1 AND liked_book_id = 1) AS is_liked
 FROM books AS b INNER JOIN categories AS c USING (category_id)
 WHERE b.id = 1;
+
+-- 장바구니에 데이터 삽입
+INSERT INTO cart_items (user_id, book_id, quantity) VALUES(1, 1, 2);
