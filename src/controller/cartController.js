@@ -54,7 +54,7 @@ const getCartItems = async (req, res) => {
 
     let sql = `SELECT c.book_id, b.title, b.summary, b.price, c.quantity 
               FROM cart_items AS c INNER JOIN books AS b ON c.book_id = b.id 
-              WHERE c.user_id=?;`;
+              WHERE c.user_id=?`;
     const [results] = await conn.query(sql, userId);
     if (results.length > 0) {
       return res.status(StatusCodes.CREATED).json({ data: results });
@@ -71,7 +71,31 @@ const getCartItems = async (req, res) => {
 };
 
 /* 장바구니에서 물품 제거 */
-const removeFromCart = async (req, res) => {};
+const removeFromCart = async (req, res) => {
+  try {
+    let { user_id: userId } = req.body;
+    let { bookId } = req.params;
+
+    // 추후, jwt토큰 유효성 검증을 통해 인증된 사용자인지 확인하는 로직 추가할 예정
+    // 일단은 body로 들어오는 user_id는 항상 유효한 값이라고 가정
+
+    const sql = `DELETE FROM cart_items WHERE user_id=? AND book_id=?`;
+    const values = [+userId, +bookId];
+    const [results] = await conn.query(sql, values);
+    if (results.affectedRows > 0) {
+      return res.status(StatusCodes.NO_CONTENT).json();
+    }
+    return res
+      .status(StatusCodes.BAD_REQUEST)
+      .json({ message: "장바구니에 해당 도서가 담겨있지 않습니다. 다시 입력해주세요." });
+  } catch (err) {
+    if (err.code && err.code.startsWith("ER_")) {
+      sqlError(res, err);
+    } else {
+      serverError(res, err);
+    }
+  }
+};
 
 /* 장바구니에서 선택한 물품 목록(주문 예상 물품 목록) 조회 */
 const getselectedItem = async (req, res) => {};
