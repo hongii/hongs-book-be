@@ -62,3 +62,8 @@ INSERT INTO cart_items (user_id, book_id, quantity) VALUES(1, 1, 2);
 SELECT b.id, b.title, b.summary, b.price, c.quantity 
 FROM cart_items AS c INNER JOIN books AS b ON c.book_id = b.id
 WHERE c.user_id = 3;
+
+-- 장바구니에서 선택한 물품 목록 조회
+SELECT b.id, b.title, b.summary, b.price, c.quantity 
+FROM cart_items AS c INNER JOIN books AS b ON c.book_id = b.id
+WHERE c.user_id = 3 AND c.id IN (1, 3);

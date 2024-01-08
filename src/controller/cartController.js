@@ -47,20 +47,28 @@ const addTocart = async (req, res) => {
 /* 장바구니 목록 조회 */
 const getCartItems = async (req, res) => {
   try {
-    let { user_id: userId } = req.body;
+    let { user_id: userId, selected: cartItemIds } = req.body;
 
     // 추후, jwt토큰 유효성 검증을 통해 인증된 사용자인지 확인하는 로직 추가할 예정
     // 일단은 body로 들어오는 user_id는 항상 유효한 값이라고 가정
 
-    let sql = `SELECT c.id AS cart_item_id ,c.book_id, b.title, b.summary, b.price, c.quantity 
+    /* 장바구니 전체 목록 조회 */
+    let sql = `SELECT c.id AS cart_item_id, c.book_id, b.title, b.summary, b.price, c.quantity 
               FROM cart_items AS c INNER JOIN books AS b ON c.book_id = b.id 
               WHERE c.user_id=?`;
-    const [results] = await conn.query(sql, userId);
-    if (results.length > 0) {
-      return res.status(StatusCodes.CREATED).json({ data: results });
+    const tailSql = " AND c.id IN (?)";
+    let values = userId;
+
+    if (cartItemIds) {
+      /* 장바구니에서 선택한 물품 목록(주문 예상 물품 목록) 조회 */
+      sql += tailSql;
+      values = [userId, cartItemIds];
     }
 
-    return res.status(StatusCodes.OK).json({ message: "장바구니 목록이 비어있습니다." });
+    const [results] = await conn.query(sql, values);
+    return results.length > 0
+      ? res.status(StatusCodes.OK).json({ data: results })
+      : res.status(StatusCodes.OK).json({ message: "장바구니 목록이 비어있습니다." });
   } catch (err) {
     if (err.code && err.code.startsWith("ER_")) {
       sqlError(res, err);
@@ -97,33 +105,4 @@ const removeFromCart = async (req, res) => {
   }
 };
 
-/* 장바구니에서 선택한 물품 목록(주문 예상 물품 목록) 조회 */
-const getselectedItem = async (req, res) => {
-  try {
-    let { user_id: userId, data: cartItemIds } = req.body;
-
-    // 추후, jwt토큰 유효성 검증을 통해 인증된 사용자인지 확인하는 로직 추가할 예정
-    // 일단은 body로 들어오는 user_id는 항상 유효한 값이라고 가정
-
-    let sql = `SELECT c.id AS cart_item_id, c.book_id, b.title, b.summary, b.price, c.quantity 
-              FROM cart_items AS c INNER JOIN books AS b ON c.book_id = b.id 
-              WHERE c.user_id=?`;
-    let [results] = await conn.query(sql, userId);
-    if (results.length > 0) {
-      results = results.filter((obj) => cartItemIds.includes(obj.cart_item_id));
-      return results.length > 0
-        ? res.status(StatusCodes.OK).json({ data: results })
-        : res.status(StatusCodes.BAD_REQUEST).json({ message: "주문할 물품을 선택해주세요." });
-    }
-
-    return res.status(StatusCodes.OK).json({ message: "장바구니 목록이 비어있습니다." });
-  } catch (err) {
-    if (err.code && err.code.startsWith("ER_")) {
-      sqlError(res, err);
-    } else {
-      serverError(res, err);
-    }
-  }
-};
-
-module.exports = { addTocart, getCartItems, removeFromCart, getselectedItem };
+module.exports = { addTocart, getCartItems, removeFromCart };
