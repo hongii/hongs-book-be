@@ -52,7 +52,7 @@ const getCartItems = async (req, res) => {
     // 추후, jwt토큰 유효성 검증을 통해 인증된 사용자인지 확인하는 로직 추가할 예정
     // 일단은 body로 들어오는 user_id는 항상 유효한 값이라고 가정
 
-    let sql = `SELECT c.book_id, b.title, b.summary, b.price, c.quantity 
+    let sql = `SELECT c.id AS cart_item_id ,c.book_id, b.title, b.summary, b.price, c.quantity 
               FROM cart_items AS c INNER JOIN books AS b ON c.book_id = b.id 
               WHERE c.user_id=?`;
     const [results] = await conn.query(sql, userId);
