@@ -57,3 +57,8 @@ WHERE b.id = 1;
 
 -- 장바구니에 데이터 삽입
 INSERT INTO cart_items (user_id, book_id, quantity) VALUES(1, 1, 2);
+
+-- 장바구니 목록 조회
+SELECT b.id, b.title, b.summary, b.price, c.quantity 
+FROM cart_items AS c INNER JOIN books AS b ON c.book_id = b.id
+WHERE c.user_id = 3;

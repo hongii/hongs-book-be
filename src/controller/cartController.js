@@ -45,7 +45,30 @@ const addTocart = async (req, res) => {
 };
 
 /* 장바구니 목록 조회 */
-const getCartItems = async (req, res) => {};
+const getCartItems = async (req, res) => {
+  try {
+    let { user_id: userId } = req.body;
+
+    // 추후, jwt토큰 유효성 검증을 통해 인증된 사용자인지 확인하는 로직 추가할 예정
+    // 일단은 body로 들어오는 user_id는 항상 유효한 값이라고 가정
+
+    let sql = `SELECT c.book_id, b.title, b.summary, b.price, c.quantity 
+              FROM cart_items AS c INNER JOIN books AS b ON c.book_id = b.id 
+              WHERE c.user_id=?;`;
+    const [results] = await conn.query(sql, userId);
+    if (results.length > 0) {
+      return res.status(StatusCodes.CREATED).json({ data: results });
+    }
+
+    return res.status(StatusCodes.OK).json({ message: "장바구니 목록이 비어있습니다." });
+  } catch (err) {
+    if (err.code && err.code.startsWith("ER_")) {
+      sqlError(res, err);
+    } else {
+      serverError(res, err);
+    }
+  }
+};
 
 /* 장바구니에서 물품 제거 */
 const removeFromCart = async (req, res) => {};
