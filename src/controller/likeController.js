@@ -9,7 +9,7 @@ const likeBook = async (req, res) => {
     const { user_id: userId } = req.body; // 추후 로그인 기능해서 jwt생성해주면, 헤더에서 jwt꺼내서 user정보 뽑아내도록 수정할 예정
 
     let sql = "INSERT INTO likes(user_id, liked_book_id) VALUES(?,  ?);";
-    let values = [userId, bookId];
+    let values = [+userId, +bookId];
     const [results] = await conn.query(sql, values);
     console.log(results);
     if (results.affectedRows > 0) {
@@ -35,11 +35,11 @@ const unlikeBook = async (req, res) => {
 
     // let sql = "SELECT * FROM likes WHERE user_id=? AND bookId=?";
     let sql = "DELETE FROM likes WHERE user_id=? AND liked_book_id=?";
-    let values = [userId, bookId];
+    let values = [+userId, +bookId];
     const [results] = await conn.query(sql, values);
     console.log(results);
     if (results.affectedRows > 0) {
-      return res.status(StatusCodes.CREATED).json({ message: "좋아요 취소!" });
+      return res.status(StatusCodes.OK).json({ message: "좋아요 취소!" });
     }
     return res
       .status(StatusCodes.BAD_REQUEST)

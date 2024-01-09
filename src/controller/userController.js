@@ -63,7 +63,7 @@ const login = async (req, res) => {
 
       // db에 저장되어 있는 암호화된 비밀번호와 일치하는지 확인
       if (targetUser.password === hashPassword) {
-        let accessToken = jwt.sign({ email: targetUser.email }, privateKey, {
+        let accessToken = jwt.sign({ email: targetUser.email, id: targetUser.id }, privateKey, {
           expiresIn: "10m",
           issuer: "euni",
         });
