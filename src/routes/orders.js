@@ -10,6 +10,6 @@ const {
 
 router.post("/", requestPayment);
 router.get("/", getOrderList);
-router.get("/:orderedId", getOrderListDetails);
+router.get("/:orderId", getOrderListDetails);
 
 module.exports = router;

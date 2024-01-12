@@ -103,6 +103,30 @@ const getOrderList = async (req, res) => {
 };
 
 /* 주문 내역의 상품 상세 조회 */
-const getOrderListDetails = async (req, res) => {};
+const getOrderListDetails = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { user_id: userId } = req.body; // body로 들어오는 user_id는 항상 유효한 값이라고 가정
+
+    let sql = `SELECT * FROM orders WHERE id=? AND user_id=?`; // 사용자 확인은 jwt유효성 검증으로 바꿀예정
+    const values = [+orderId, +userId];
+    const [results] = await conn.query(sql, values);
+    if (results.length > 0) {
+      sql = `SELECT o.book_id, b.title, b.author, b.price, o.quantity 
+            FROM ordered_books AS o INNER JOIN books AS b ON o.book_id=b.id 
+            WHERE order_id =?`;
+      const [results] = await conn.query(sql, +orderId);
+      return res.status(StatusCodes.OK).json({ data: results });
+    }
+
+    return res.status(StatusCodes.NOT_FOUND).json({ message: "주문 내역이 없습니다." });
+  } catch (err) {
+    if (err.code && err.code.startsWith("ER_")) {
+      sqlError(res, err);
+    } else {
+      serverError(res, err);
+    }
+  }
+};
 
 module.exports = { requestPayment, getOrderList, getOrderListDetails };
