@@ -59,8 +59,48 @@ const requestPayment = async (req, res) => {
   }
 };
 
-/* 주문 내역 조회 */
-const getOrderList = async (req, res) => {};
+/* 전체 주문 내역 조회 */
+const getOrderList = async (req, res) => {
+  try {
+    const { user_id: userId } = req.body;
+
+    // 추후, jwt토큰 유효성 검증을 통해 인증된 사용자인지 확인하는 로직 추가할 예정
+    // 일단은 body로 들어오는 user_id는 항상 유효한 값이라고 가정
+
+    const sql = `
+      SELECT o.id AS order_id, o.created_at, o.main_book_title, o.total_quantity, o.total_price, d.address, d.receiver, d.contact 
+      FROM orders AS o INNER JOIN deliveries AS d ON o.delivery_id=d.id
+      WHERE o.user_id=?`;
+    const values = [+userId];
+    const [results] = await conn.query(sql, values);
+    if (results.length > 0) {
+      const deliveryKeys = ["address", "receiver", "contact"];
+      const data = results.map((obj) => {
+        const delivery = {};
+        const newObj = {};
+
+        Object.keys(obj).forEach((key) => {
+          if (!deliveryKeys.includes(key)) {
+            newObj[key] = obj[key];
+          } else {
+            delivery[key] = obj[key];
+          }
+        });
+        return { ...newObj, delivery };
+      });
+
+      return res.status(StatusCodes.OK).json({ data });
+    }
+
+    return res.status(StatusCodes.NOT_FOUND).json({ message: "주문 내역이 없습니다." });
+  } catch (err) {
+    if (err.code && err.code.startsWith("ER_")) {
+      sqlError(res, err);
+    } else {
+      serverError(res, err);
+    }
+  }
+};
 
 /* 주문 내역의 상품 상세 조회 */
 const getOrderListDetails = async (req, res) => {};
