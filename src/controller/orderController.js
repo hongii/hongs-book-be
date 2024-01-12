@@ -39,6 +39,11 @@ const requestPayment = async (req, res) => {
     }
     await conn.query(sql, [values]);
 
+    // 주문한 상품은 장바구니에서 삭제하기
+    const itemIds = items.map((obj) => obj.cart_item_id);
+    sql = "DELETE FROM cart_items WHERE id IN(?)";
+    await conn.query(sql, [itemIds]);
+
     // 트랜잭션 커밋 완료
     await conn.commit();
 

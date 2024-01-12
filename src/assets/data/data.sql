@@ -79,3 +79,6 @@ const order_id = SELECT MAX(id) FROM orders;
 -- ordered_books테이블에 주문 상세 목록 입력
 INSERT INTO ordered_books (order_id, book_id, quantity) VALUES(order_id, 2, 1);
 INSERT INTO ordered_books (order_id, book_id, quantity) VALUES(order_id, 1, 2);
+
+-- 결제 완료된 물품은 장바구니에서 삭제
+DELETE FROM cart_items WHERE id IN(?)
