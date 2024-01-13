@@ -1,17 +1,18 @@
 const conn = require("../../mariadb").promise();
 const { StatusCodes } = require("http-status-codes");
-const { sqlError, serverError } = require("../utils/errorHandler");
+const { sqlError, serverError, jwtError } = require("../utils/errorHandler");
+const jwt = require("jsonwebtoken");
+const privateKey = process.env.PRIVATE_KEY;
 
 /* 좋아요 추가 */
 const likeBook = async (req, res) => {
   try {
     const { bookId } = req.params;
-    const { user_id: userId } = req.body; // 추후 로그인 기능해서 jwt생성해주면, 헤더에서 jwt꺼내서 user정보 뽑아내도록 수정할 예정
+    const { id } = req.user;
 
     let sql = "INSERT INTO likes(user_id, liked_book_id) VALUES(?,  ?);";
-    let values = [+userId, +bookId];
+    let values = [+id, +bookId];
     const [results] = await conn.query(sql, values);
-    console.log(results);
     if (results.affectedRows > 0) {
       return res.status(StatusCodes.CREATED).json({ message: "좋아요 추가!" });
     }
@@ -21,6 +22,8 @@ const likeBook = async (req, res) => {
   } catch (err) {
     if (err.code && err.code.startsWith("ER_")) {
       sqlError(res, err);
+    } else if (err instanceof jwt.JsonWebTokenError) {
+      jwtError(res, err);
     } else {
       serverError(res, err);
     }
@@ -31,13 +34,12 @@ const likeBook = async (req, res) => {
 const unlikeBook = async (req, res) => {
   try {
     const { bookId } = req.params;
-    const { user_id: userId } = req.body; // 추후 로그인 기능해서 jwt생성해주면, 헤더에서 jwt꺼내서 user정보 뽑아내도록 수정할 예정
+    const { id } = req.user;
 
     // let sql = "SELECT * FROM likes WHERE user_id=? AND bookId=?";
     let sql = "DELETE FROM likes WHERE user_id=? AND liked_book_id=?";
-    let values = [+userId, +bookId];
+    let values = [+id, +bookId];
     const [results] = await conn.query(sql, values);
-    console.log(results);
     if (results.affectedRows > 0) {
       return res.status(StatusCodes.OK).json({ message: "좋아요 취소!" });
     }
@@ -47,6 +49,8 @@ const unlikeBook = async (req, res) => {
   } catch (err) {
     if (err.code && err.code.startsWith("ER_")) {
       sqlError(res, err);
+    } else if (err instanceof jwt.JsonWebTokenError) {
+      jwtError(res, err);
     } else {
       serverError(res, err);
     }
