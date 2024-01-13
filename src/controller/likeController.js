@@ -1,7 +1,6 @@
 const conn = require("../../mariadb").promise();
 const { StatusCodes } = require("http-status-codes");
-const { sqlError, serverError, jwtError } = require("../utils/errorHandler");
-const jwt = require("jsonwebtoken");
+const { sqlError, serverError } = require("../utils/errorHandler");
 const privateKey = process.env.PRIVATE_KEY;
 
 /* 좋아요 추가 */
@@ -22,8 +21,6 @@ const likeBook = async (req, res) => {
   } catch (err) {
     if (err.code && err.code.startsWith("ER_")) {
       sqlError(res, err);
-    } else if (err instanceof jwt.JsonWebTokenError) {
-      jwtError(res, err);
     } else {
       serverError(res, err);
     }
@@ -49,8 +46,6 @@ const unlikeBook = async (req, res) => {
   } catch (err) {
     if (err.code && err.code.startsWith("ER_")) {
       sqlError(res, err);
-    } else if (err instanceof jwt.JsonWebTokenError) {
-      jwtError(res, err);
     } else {
       serverError(res, err);
     }
