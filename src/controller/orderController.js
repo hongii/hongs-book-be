@@ -11,11 +11,8 @@ const requestPayment = async (req, res) => {
       total_quantity: totalQuantity,
       total_price: totalPrice,
       main_book_title: mainBookTitle,
-      user_id: userId,
     } = req.body;
-
-    // 추후, jwt토큰 유효성 검증을 통해 인증된 사용자인지 확인하는 로직 추가할 예정
-    // 일단은 body로 들어오는 user_id는 항상 유효한 값이라고 가정
+    const { id: userId } = req.user;
 
     // 트랜잭션 시작
     await conn.beginTransaction();
@@ -62,10 +59,7 @@ const requestPayment = async (req, res) => {
 /* 전체 주문 내역 조회 */
 const getOrderList = async (req, res) => {
   try {
-    const { user_id: userId } = req.body;
-
-    // 추후, jwt토큰 유효성 검증을 통해 인증된 사용자인지 확인하는 로직 추가할 예정
-    // 일단은 body로 들어오는 user_id는 항상 유효한 값이라고 가정
+    const { id: userId } = req.user;
 
     const sql = `
       SELECT o.id AS order_id, o.created_at, o.main_book_title, o.total_quantity, o.total_price, d.address, d.receiver, d.contact 
@@ -106,7 +100,7 @@ const getOrderList = async (req, res) => {
 const getOrderListDetails = async (req, res) => {
   try {
     const { orderId } = req.params;
-    const { user_id: userId } = req.body; // body로 들어오는 user_id는 항상 유효한 값이라고 가정
+    const { id: userId } = req.user;
 
     let sql = `SELECT * FROM orders WHERE id=? AND user_id=?`; // 사용자 확인은 jwt유효성 검증으로 바꿀예정
     const values = [+orderId, +userId];

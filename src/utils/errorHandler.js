@@ -23,7 +23,7 @@ const jwtError = (res, err) => {
     console.error("expired token");
     return res
       .status(StatusCodes.UNAUTHORIZED)
-      .json({ message: "로그인 인증이 만료되었습니다. 다시 로그인 후 사용해주세요." });
+      .json({ message: "로그인(인증) 토큰이 만료되었습니다. 다시 로그인 후 사용해주세요." });
   } else if (err.name === "JsonWebTokenError") {
     // 유효하지 않은 토큰 에러 처리
     console.error("invalid token");

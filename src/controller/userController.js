@@ -63,12 +63,19 @@ const login = async (req, res) => {
 
       // db에 저장되어 있는 암호화된 비밀번호와 일치하는지 확인
       if (targetUser.password === hashPassword) {
-        let accessToken = jwt.sign({ email: targetUser.email, id: targetUser.id }, privateKey, {
-          expiresIn: "10m",
-          issuer: "euni",
+        let accessToken = jwt.sign({ email: targetUser.email, uid: targetUser.id }, privateKey, {
+          expiresIn: process.env.ACCESSTOKEN_LIFETIME,
+          issuer: process.env.ACCESSTOKEN_ISSUER,
         });
 
-        res.cookie("access_token", accessToken, { httpOnly: true });
+        /* 쿠키에 access token을 저장하는 방법은 삭제할 예정.
+          대신 refresh token을 httpOnly 쿠키에 담아서 보낼 예정 */
+        res.cookie("access_token", accessToken, {
+          httpOnly: true,
+          secure: true,
+          sameSite: "strict",
+        });
+        res.header("Authorization", `Bearer ${accessToken}`);
         return res.status(StatusCodes.OK).json({ data: targetUser });
       }
     }
@@ -127,7 +134,6 @@ const performPwdReset = async (req, res) => {
     const sql = "UPDATE users SET password=?, salt=? WHERE email=?";
     const values = [hashPassword, salt, email];
     const [results] = await conn.query(sql, values);
-    console.log(results);
     if (results.affectedRows > 0) {
       return res.status(StatusCodes.OK).json({ message: "비밀번호가 변경되었습니다." });
     }

@@ -5,10 +5,8 @@ const { sqlError, serverError } = require("../utils/errorHandler");
 /* 장바구니에 담기 */
 const addTocart = async (req, res) => {
   try {
-    let { user_id: userId, book_id: bookId, quantity } = req.body;
-
-    // 추후, jwt토큰 유효성 검증을 통해 인증된 사용자인지 확인하는 로직 추가할 예정
-    // 일단은 body로 들어오는 user_id는 항상 유효한 값이라고 가정
+    let { book_id: bookId, quantity } = req.body;
+    const { id: userId } = req.user;
 
     let sql = "SELECT * FROM books WHERE id=?";
     const [results] = await conn.query(sql, bookId);
@@ -44,10 +42,8 @@ const addTocart = async (req, res) => {
 /* 장바구니 목록 조회 */
 const getCartItems = async (req, res) => {
   try {
-    let { user_id: userId, selected: cartItemIds } = req.body;
-
-    // 추후, jwt토큰 유효성 검증을 통해 인증된 사용자인지 확인하는 로직 추가할 예정
-    // 일단은 body로 들어오는 user_id는 항상 유효한 값이라고 가정
+    const { selected: cartItemIds } = req.body;
+    const { id: userId } = req.user;
 
     /* 장바구니 전체 목록 조회 */
     let sql = `SELECT c.id AS cart_item_id, c.book_id, b.title, b.summary, b.price, c.quantity 
@@ -58,8 +54,14 @@ const getCartItems = async (req, res) => {
 
     if (cartItemIds) {
       /* 장바구니에서 선택한 물품 목록(주문 예상 물품 목록) 조회 */
-      sql += tailSql;
       values.push(cartItemIds);
+
+      const [results] = await conn.query(sql + tailSql, values);
+      return results.length > 0
+        ? res.status(StatusCodes.OK).json({ data: results })
+        : res
+            .status(StatusCodes.BAD_REQUEST)
+            .json({ message: "잘못된 정보를 입력하였습니다. 확인 후 다시 입력해주세요." });
     }
 
     const [results] = await conn.query(sql, values);
@@ -78,11 +80,8 @@ const getCartItems = async (req, res) => {
 /* 장바구니에서 물품 제거 */
 const removeFromCart = async (req, res) => {
   try {
-    let { user_id: userId } = req.body;
-    let { bookId } = req.params;
-
-    // 추후, jwt토큰 유효성 검증을 통해 인증된 사용자인지 확인하는 로직 추가할 예정
-    // 일단은 body로 들어오는 user_id는 항상 유효한 값이라고 가정
+    const { id: userId } = req.user;
+    const { bookId } = req.params;
 
     const sql = `DELETE FROM cart_items WHERE user_id=? AND book_id=?`;
     const values = [+userId, +bookId];
