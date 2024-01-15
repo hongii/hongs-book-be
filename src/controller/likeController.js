@@ -2,18 +2,45 @@ const conn = require("../../mariadb").promise();
 const { StatusCodes } = require("http-status-codes");
 const { sqlError, serverError } = require("../utils/errorHandler");
 
-/* 좋아요 추가 */
-const likeBook = async (req, res) => {
+const getlikesCnt = async (bookId) => {
+  let sql = `SELECT (SELECT COUNT(*) FROM likes WHERE liked_book_id = b.id) AS likes
+            FROM books AS b INNER JOIN categories AS c USING (category_id) 
+            WHERE b.id = ?`;
+  let [results] = await conn.query(sql, bookId);
+  if (results.length > 0) {
+    return results[0].likes;
+  } else throw new Error("sql error");
+};
+
+/* 좋아요 추가 OR 취소 */
+const likeAndUnlikeBook = async (req, res) => {
   try {
     const { bookId } = req.params;
     const { id: userId } = req.user;
 
-    let sql = "INSERT INTO likes(user_id, liked_book_id) VALUES(?,  ?);";
+    let sql = "SELECT * FROM likes WHERE user_id=? AND liked_book_id=?";
     let values = [+userId, +bookId];
-    const [results] = await conn.query(sql, values);
-    if (results.affectedRows > 0) {
-      return res.status(StatusCodes.CREATED).json({ message: "좋아요 추가!" });
+    let [results] = await conn.query(sql, values);
+    if (results.length > 0) {
+      // 이미 사용자가 해당 도서를 "좋아요" 해둔 경우 -> 좋아요 취소 진행(toggle)
+      sql = "DELETE FROM likes WHERE user_id=? AND liked_book_id=?";
+      values = [+userId, +bookId];
+      [results] = await conn.query(sql, values);
+      if (results.affectedRows > 0) {
+        let likes = await getlikesCnt(+bookId);
+        return res.status(StatusCodes.OK).json({ likes, message: "좋아요 취소!" });
+      }
+    } else {
+      // 사용자가 해당 도서를 "좋아요" 해두지 않은 경우 -> 좋아요 추가
+      sql = "INSERT INTO likes(user_id, liked_book_id) VALUES(?,  ?);";
+      values = [+userId, +bookId];
+      [results] = await conn.query(sql, values);
+      if (results.affectedRows > 0) {
+        let likes = await getlikesCnt(+bookId);
+        return res.status(StatusCodes.CREATED).json({ likes, message: "좋아요 추가!" });
+      }
     }
+
     return res
       .status(StatusCodes.BAD_REQUEST)
       .json({ message: "잘못된 요청입니다. 확인 후 다시 시도해주세요." });
@@ -26,29 +53,4 @@ const likeBook = async (req, res) => {
   }
 };
 
-/* 좋아요 취소 */
-const unlikeBook = async (req, res) => {
-  try {
-    const { bookId } = req.params;
-    const { id: userId } = req.user;
-
-    // let sql = "SELECT * FROM likes WHERE user_id=? AND bookId=?";
-    let sql = "DELETE FROM likes WHERE user_id=? AND liked_book_id=?";
-    let values = [+userId, +bookId];
-    const [results] = await conn.query(sql, values);
-    if (results.affectedRows > 0) {
-      return res.status(StatusCodes.OK).json({ message: "좋아요 취소!" });
-    }
-    return res
-      .status(StatusCodes.BAD_REQUEST)
-      .json({ message: "잘못된 요청입니다. 확인 후 다시 시도해주세요." });
-  } catch (err) {
-    if (err.code && err.code.startsWith("ER_")) {
-      sqlError(res, err);
-    } else {
-      serverError(res, err);
-    }
-  }
-};
-
-module.exports = { likeBook, unlikeBook };
+module.exports = { likeAndUnlikeBook };

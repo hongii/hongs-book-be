@@ -3,9 +3,9 @@ const router = express.Router();
 router.use(express.json());
 
 const authenticateToken = require("../middleware/auth");
-const { likeBook, unlikeBook } = require("../controller/likeController");
+const { likeAndUnlikeBook } = require("../controller/likeController");
 
-router.post("/:bookId", authenticateToken, likeBook);
-router.delete("/:bookId", authenticateToken, unlikeBook);
+router.post("/:bookId", authenticateToken, likeAndUnlikeBook);
+// router.delete("/:bookId", authenticateToken, likeAndUnlikeBook);
 
 module.exports = router;
