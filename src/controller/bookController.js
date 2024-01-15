@@ -55,7 +55,6 @@ const getBooksInfo = async (req, res) => {
       const data = Object.entries(results)
         .filter(([key]) => key !== "category_id")
         .map((arr) => arr[1]);
-      console.log(data);
       return res.status(StatusCodes.OK).json({ data });
     }
 
@@ -78,15 +77,26 @@ const getBooksInfo = async (req, res) => {
 const getBookDetail = async (req, res) => {
   try {
     const { bookId } = req.params;
-    const { user_id: userId } = req.body;
+    const userId = req.user?.id;
 
-    const sql = `
+    // 로그인 하지 않은 유저가 개별 도서 조회 api를 호출한 경우
+    let sql = `SELECT b.*, c.category_name,
+        (SELECT COUNT(*) FROM likes WHERE liked_book_id = b.id) AS likes
+      FROM books AS b INNER JOIN categories AS c USING (category_id) 
+      WHERE b.id = ?`;
+    let values = [+bookId];
+
+    if (userId) {
+      // 로그인한 유저가 개별 도서 조회 api를 호출한 경우(accessToken 유효성 검증 과정이 선행됨)
+      sql = `
       SELECT b.*, c.category_name,
         (SELECT COUNT(*) FROM likes WHERE liked_book_id = b.id) AS likes,
         EXISTS (SELECT 1 FROM likes WHERE user_id = ? AND liked_book_id = ?) AS is_liked 
       FROM books AS b INNER JOIN categories AS c USING (category_id) 
       WHERE b.id = ?`;
-    const values = [+userId, +bookId, +bookId];
+      values = [+userId, +bookId, +bookId];
+    }
+
     const [results] = await conn.query(sql, values);
     if (results.length > 0) {
       const data = Object.fromEntries(
