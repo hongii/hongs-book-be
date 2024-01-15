@@ -1,13 +1,11 @@
-// get the client
 const mysql = require("mysql2");
 
-// create the connection to database
 const connection = mysql.createConnection({
-  host: "127.0.0.1",
-  user: "root",
-  port: 3305,
-  password: "root",
-  database: "BookShop",
+  host: process.env.MARIADB_HOST,
+  user: process.env.MARIADB_USER,
+  port: process.env.MARIADB_PORT,
+  password: process.env.MARIADB_PASSWORD,
+  database: process.env.MARIADB_DATABASE,
   dateStrings: true,
 });
 
