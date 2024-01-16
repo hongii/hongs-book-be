@@ -12,8 +12,9 @@ const getBooksInfo = async (req, res) => {
     // 아래 변수들의 default값은 전체 도서 목록 조회 기준
     limit = parseInt(limit);
     let offset = (+page - 1) * limit;
-    let sql = `SELECT SQL_CALC_FOUND_ROWS *, b.*, c.category_name,
-                (SELECT count(*) FROM likes WHERE likes.liked_book_id=b.id) AS likes
+    let sql = `SELECT b.*, c.category_name,
+                (SELECT count(*) FROM likes WHERE likes.liked_book_id=b.id) AS likes,
+                (SELECT count(*) FROM books) AS total_books
               FROM books AS b INNER JOIN categories AS c USING (category_id)`,
       tailSql = " LIMIT ? OFFSET ?",
       errMessage = "조회 가능한 도서 목록이 비어 있습니다.",
@@ -54,12 +55,13 @@ const getBooksInfo = async (req, res) => {
     sql = "SELECT FOUND_ROWS()";
     const [booksResults] = await conn.query(sql);
     if (results.length > 0) {
+      const totalBooks = results[0].total_books;
       const books = Object.entries(results)
         .filter(([key]) => key !== "category_id")
         .map((arr) => arr[1]);
       return res
         .status(StatusCodes.OK)
-        .json({ books, pagination: { total_books: booksResults[0]["FOUND_ROWS()"], page } });
+        .json({ books, pagination: { total_books: totalBooks, page } });
     }
 
     if (errMessage) {
