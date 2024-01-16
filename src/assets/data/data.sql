@@ -67,3 +67,18 @@ WHERE c.user_id = 3;
 SELECT b.id, b.title, b.summary, b.price, c.quantity 
 FROM cart_items AS c INNER JOIN books AS b ON c.book_id = b.id
 WHERE c.user_id = 3 AND c.id IN (1, 3);
+
+-- deliveries 테이블에 데이터 삽입
+INSERT INTO deliveries (address, receiver, contact) VALUES("울산시 중구", "kim", "010-1111-1111");
+
+-- orderes테이블에 주문 정보 입력
+INSERT INTO orders (delivery_id,user_id, main_book_title, total_price, total_quantity) 
+VALUES(1, 1, "가나다", 20800, 3);
+const order_id = SELECT MAX(id) FROM orders;
+
+-- ordered_books테이블에 주문 상세 목록 입력
+INSERT INTO ordered_books (order_id, book_id, quantity) VALUES(order_id, 2, 1);
+INSERT INTO ordered_books (order_id, book_id, quantity) VALUES(order_id, 1, 2);
+
+-- 결제 완료된 물품은 장바구니에서 삭제
+DELETE FROM cart_items WHERE id IN(?)

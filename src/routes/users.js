@@ -4,7 +4,7 @@ router.use(express.json());
 
 const { body } = require("express-validator");
 const { join, login, requestPwdReset, performPwdReset } = require("../controller/userController");
-const validate = require("../middleware/validationMiddleware");
+const validateInput = require("../middleware/validate");
 
 router.post(
   "/join",
@@ -21,7 +21,7 @@ router.post(
       .bail()
       .isLength({ min: 4, max: 16 })
       .withMessage("비밀번호는 4~16자 이내로 입력해주세요."),
-    validate,
+    validateInput,
   ],
   join,
 );
@@ -31,14 +31,14 @@ router.post(
   [
     body("email").notEmpty().withMessage("이메일을 입력해주세요."),
     body("password").notEmpty().withMessage("비밀번호를 입력해주세요."),
-    validate,
+    validateInput,
   ],
   login,
 );
 
 router.post(
   "/reset",
-  [body("email").notEmpty().withMessage("이메일을 입력해주세요."), validate],
+  [body("email").notEmpty().withMessage("이메일을 입력해주세요."), validateInput],
   requestPwdReset,
 );
 
@@ -52,7 +52,7 @@ router.put(
       .bail()
       .isLength({ min: 4, max: 16 })
       .withMessage("비밀번호는 4~16자 이내로 입력해주세요."),
-    validate,
+    validateInput,
   ],
   performPwdReset,
 );

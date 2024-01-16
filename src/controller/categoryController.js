@@ -10,7 +10,7 @@ const getAllCategories = async (req, res) => {
     if (results.length > 0) {
       return res.status(StatusCodes.OK).json(results);
     }
-    return res.status(StatusCodes.NO_CONTENT).json({ message: "도서 목록이 비어있습니다." });
+    return res.status(StatusCodes.NOT_FOUND).json({ message: "도서 목록이 비어있습니다." });
   } catch (err) {
     if (err.code && err.code.startsWith("ER_")) {
       sqlError(res, err);

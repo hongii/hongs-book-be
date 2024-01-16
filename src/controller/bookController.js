@@ -25,10 +25,10 @@ const getBooksInfo = async (req, res) => {
 
       if (results.length > 0) {
         let categoryName = results[0].category_name;
+        values = [+categoryId, ...values];
         if (isNew) {
           // 카테고리 별 신간 도서 목록 조회(출판일이 현재 일자 기준으로 30일 이내인 도서)
           sql = `${sql} WHERE category_id=? AND published_date BETWEEN DATE_SUB(CURDATE(), INTERVAL 30 DAY) AND CURDATE()`;
-          values = [categoryId, ...values];
           errMessage =
             page > 1
               ? null
@@ -36,7 +36,6 @@ const getBooksInfo = async (req, res) => {
         } else {
           // 카테고리 별 도서 목록 조회
           sql = `${sql} WHERE category_id=?`;
-          values = [categoryId, ...values];
           errMessage = page > 1 ? null : `${categoryName} 카테고리에 해당하는 도서가 없습니다.`;
         }
       } else {
