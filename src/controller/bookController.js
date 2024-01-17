@@ -1,12 +1,11 @@
 const conn = require("../../mariadb").promise();
 const { StatusCodes } = require("http-status-codes");
 const { sqlError, serverError } = require("../utils/errorHandler");
+const { snakeToCamelData } = require("../utils/convertSnakeToCamel");
 
 /* 도서 목록 조회 */
 const getBooksInfo = async (req, res) => {
   try {
-    // limit : 한 page당 보여줄 도서 갯수, page : 현재 페이지 번호
-    // offset = (page - 1) * limit
     let { category_id: categoryId, new: isNew, page, limit } = req.query;
 
     // 아래 변수들의 default값은 전체 도서 목록 조회 기준
@@ -52,16 +51,13 @@ const getBooksInfo = async (req, res) => {
     }
 
     const [results] = await conn.query(sql + tailSql, values);
-    sql = "SELECT FOUND_ROWS()";
-    const [booksResults] = await conn.query(sql);
     if (results.length > 0) {
       const totalBooks = results[0].total_books;
-      const books = Object.entries(results)
+      let books = Object.entries(results)
         .filter(([key]) => key !== "category_id")
         .map((arr) => arr[1]);
-      return res
-        .status(StatusCodes.OK)
-        .json({ books, pagination: { total_books: totalBooks, page } });
+      books = snakeToCamelData(books);
+      return res.status(StatusCodes.OK).json({ data: { books, pagination: { totalBooks, page } } });
     }
 
     if (errMessage) {
@@ -105,9 +101,10 @@ const getBookDetail = async (req, res) => {
 
     const [results] = await conn.query(sql, values);
     if (results.length > 0) {
-      const data = Object.fromEntries(
+      let data = Object.fromEntries(
         Object.entries(results[0]).filter(([key]) => key !== "category_id"),
       );
+      data = snakeToCamelData(data);
       return res.status(StatusCodes.OK).json({ data }); // 카테고리 id 정보도 함께 보내려면 { data: results } 이렇게 보내주면 됨
     }
     return res.status(StatusCodes.NOT_FOUND).json({ message: "존재하지 않는 도서입니다." });

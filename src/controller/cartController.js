@@ -1,6 +1,7 @@
 const conn = require("../../mariadb").promise();
 const { StatusCodes } = require("http-status-codes");
 const { sqlError, serverError } = require("../utils/errorHandler");
+const { snakeToCamelData } = require("../utils/convertSnakeToCamel");
 
 /* 장바구니에 담기 */
 const addTocart = async (req, res) => {
@@ -57,17 +58,21 @@ const getCartItems = async (req, res) => {
       values.push(cartItemIds);
 
       const [results] = await conn.query(sql + tailSql, values);
-      return results.length > 0
-        ? res.status(StatusCodes.OK).json({ data: results })
-        : res
-            .status(StatusCodes.BAD_REQUEST)
-            .json({ message: "잘못된 정보를 입력하였습니다. 확인 후 다시 입력해주세요." });
+      if (results.length > 0) {
+        const items = snakeToCamelData(results);
+        return res.status(StatusCodes.OK).json({ data: { items } });
+      }
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ message: "잘못된 정보를 입력하였습니다. 확인 후 다시 입력해주세요." });
     }
 
     const [results] = await conn.query(sql, values);
-    return results.length > 0
-      ? res.status(StatusCodes.OK).json({ data: results })
-      : res.status(StatusCodes.OK).json({ message: "장바구니 목록이 비어있습니다." });
+    if (results.length > 0) {
+      const items = snakeToCamelData(results);
+      return res.status(StatusCodes.OK).json({ data: { items } });
+    }
+    return res.status(StatusCodes.OK).json({ message: "장바구니 목록이 비어있습니다." });
   } catch (err) {
     if (err.code && err.code.startsWith("ER_")) {
       sqlError(res, err);

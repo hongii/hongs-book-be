@@ -1,17 +1,12 @@
 const conn = require("../../mariadb").promise();
 const { StatusCodes } = require("http-status-codes");
 const { sqlError, serverError } = require("../utils/errorHandler");
+const { snakeToCamelData } = require("../utils/convertSnakeToCamel");
 
 /* 주문(결제) 요청 */
 const requestPayment = async (req, res) => {
   try {
-    let {
-      items,
-      delivery,
-      total_quantity: totalQuantity,
-      total_price: totalPrice,
-      main_book_title: mainBookTitle,
-    } = req.body;
+    let { items, delivery, totalQuantity, totalPrice, mainBookTitle } = req.body;
     const { id: userId } = req.user;
 
     // 트랜잭션 시작
@@ -32,12 +27,12 @@ const requestPayment = async (req, res) => {
     sql = `INSERT INTO ordered_books (order_id, book_id, quantity) VALUES ?`;
     values = [];
     for (let i = 0; i < items.length; i++) {
-      values.push([orderId, items[i].book_id, items[i].quantity]);
+      values.push([orderId, items[i].bookId, items[i].quantity]);
     }
     await conn.query(sql, [values]);
 
     // 주문한 상품은 장바구니에서 삭제하기
-    const itemIds = items.map((obj) => obj.cart_item_id);
+    const itemIds = items.map((obj) => obj.cartItemId);
     sql = "DELETE FROM cart_items WHERE id IN(?)";
     await conn.query(sql, [itemIds]);
 
@@ -68,8 +63,9 @@ const getOrderList = async (req, res) => {
     const values = [+userId];
     const [results] = await conn.query(sql, values);
     if (results.length > 0) {
+      let orders = snakeToCamelData(results);
       const deliveryKeys = ["address", "receiver", "contact"];
-      const data = results.map((obj) => {
+      orders = results.map((obj) => {
         const delivery = {};
         const newObj = {};
 
@@ -82,8 +78,7 @@ const getOrderList = async (req, res) => {
         });
         return { ...newObj, delivery };
       });
-
-      return res.status(StatusCodes.OK).json({ data });
+      return res.status(StatusCodes.OK).json({ data: { orders } });
     }
 
     return res.status(StatusCodes.NOT_FOUND).json({ message: "주문 내역이 없습니다." });
@@ -110,7 +105,8 @@ const getOrderListDetails = async (req, res) => {
             FROM ordered_books AS o INNER JOIN books AS b ON o.book_id=b.id 
             WHERE order_id =?`;
       const [results] = await conn.query(sql, +orderId);
-      return res.status(StatusCodes.OK).json({ data: results });
+      const orderDetail = snakeToCamelData(results);
+      return res.status(StatusCodes.OK).json({ data: { orderDetail } });
     }
 
     return res.status(StatusCodes.NOT_FOUND).json({ message: "주문 내역이 없습니다." });

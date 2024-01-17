@@ -28,7 +28,7 @@ const likeAndUnlikeBook = async (req, res) => {
       [results] = await conn.query(sql, values);
       if (results.affectedRows > 0) {
         let likes = await getlikesCnt(+bookId);
-        return res.status(StatusCodes.OK).json({ likes, message: "좋아요 취소!" });
+        return res.status(StatusCodes.OK).json({ data: { likes }, message: "좋아요 취소!" });
       }
     } else {
       // 사용자가 해당 도서를 "좋아요" 해두지 않은 경우 -> 좋아요 추가
@@ -37,7 +37,7 @@ const likeAndUnlikeBook = async (req, res) => {
       [results] = await conn.query(sql, values);
       if (results.affectedRows > 0) {
         let likes = await getlikesCnt(+bookId);
-        return res.status(StatusCodes.CREATED).json({ likes, message: "좋아요 추가!" });
+        return res.status(StatusCodes.CREATED).json({ data: { likes }, message: "좋아요 추가!" });
       }
     }
 

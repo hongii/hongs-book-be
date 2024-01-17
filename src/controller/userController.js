@@ -76,7 +76,14 @@ const login = async (req, res) => {
           sameSite: "strict",
         });
         res.header("Authorization", `Bearer ${accessToken}`);
-        return res.status(StatusCodes.OK).json({ data: targetUser });
+        return res.status(StatusCodes.OK).json({
+          data: {
+            id: targetUser.id,
+            email: targetUser.email,
+            name: targetUser.name,
+            contact: targetUser.contact,
+          },
+        });
       }
     }
 
@@ -104,7 +111,7 @@ const requestPwdReset = async (req, res) => {
     const [results] = await conn.query(sql, email);
     const targetUser = results[0];
     if (targetUser) {
-      return res.status(StatusCodes.OK).json({ email: targetUser.email });
+      return res.status(StatusCodes.OK).json({ data: { email: targetUser.email } });
     }
 
     return res
