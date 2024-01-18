@@ -6,10 +6,12 @@ const {
   getOrderList,
   getOrderListDetails,
 } = require("../controllers/orderController");
-const authenticateToken = require("../middlewares/auth");
+const { authenticateToken } = require("../middlewares/authMiddleware");
 
-router.post("/", authenticateToken, requestPayment);
-router.get("/", authenticateToken, getOrderList);
-router.get("/:orderId", authenticateToken, getOrderListDetails);
+router.use(authenticateToken);
+
+router.post("/", requestPayment);
+router.get("/", getOrderList);
+router.get("/:orderId", getOrderListDetails);
 
 module.exports = router;

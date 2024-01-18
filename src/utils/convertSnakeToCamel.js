@@ -1,6 +1,6 @@
 const snakeToCamel = (dataObj) => {
   for (let key of Object.keys(dataObj)) {
-    const camelKey = key.replace(/_([a-zA-Z])/g, (match, p1) => p1.toUpperCase());
+    const camelKey = key.replace(/_([a-z])/g, (match, p1) => p1.toUpperCase());
     if (camelKey !== key) {
       dataObj[camelKey] = dataObj[key];
       delete dataObj[key];
