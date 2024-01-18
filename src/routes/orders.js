@@ -5,8 +5,8 @@ const {
   requestPayment,
   getOrderList,
   getOrderListDetails,
-} = require("../controller/orderController");
-const authenticateToken = require("../middleware/auth");
+} = require("../controllers/orderController");
+const authenticateToken = require("../middlewares/auth");
 
 router.post("/", authenticateToken, requestPayment);
 router.get("/", authenticateToken, getOrderList);

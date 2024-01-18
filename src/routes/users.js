@@ -2,8 +2,8 @@ const express = require("express");
 const router = express.Router();
 
 const { body } = require("express-validator");
-const { join, login, requestPwdReset, performPwdReset } = require("../controller/userController");
-const validateInput = require("../middleware/validate");
+const { join, login, requestPwdReset, performPwdReset } = require("../controllers/userController");
+const validateInput = require("../middlewares/validate");
 
 router.post(
   "/join",
