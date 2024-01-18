@@ -97,7 +97,7 @@ const getOrderListDetails = async (req, res) => {
     const { orderId } = req.params;
     const { id: userId } = req.user;
 
-    let sql = `SELECT * FROM orders WHERE id=? AND user_id=?`; // 사용자 확인은 jwt유효성 검증으로 바꿀예정
+    let sql = `SELECT * FROM orders WHERE id=? AND user_id=?`;
     const values = [+orderId, +userId];
     const [results] = await conn.query(sql, values);
     if (results.length > 0) {

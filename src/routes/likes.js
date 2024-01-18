@@ -1,6 +1,5 @@
 const express = require("express");
 const router = express.Router();
-router.use(express.json());
 
 const authenticateToken = require("../middleware/auth");
 const { likeAndUnlikeBook } = require("../controller/likeController");
