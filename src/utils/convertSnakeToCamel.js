@@ -11,13 +11,10 @@ const snakeToCamel = (dataObj) => {
 
 const snakeToCamelData = (data) => {
   if (Array.isArray(data)) {
-    for (let i = 0; i < data.length; i++) {
-      data[i] = snakeToCamel(data[i]);
-    }
+    return data.map(snakeToCamel);
   } else {
-    data = snakeToCamel(data);
+    return snakeToCamel(data);
   }
-  return data;
 };
 
 module.exports = { snakeToCamelData };
