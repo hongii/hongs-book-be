@@ -1,37 +1,18 @@
-const conn = require("../../mariadb").promise();
 const { StatusCodes } = require("http-status-codes");
-const { snakeToCamelData } = require("../utils/convertSnakeToCamel");
 const { asyncWrapper } = require("../middlewares/asyncWrapperMiddleware");
-const { CustomError } = require("../middlewares/errorHandlerMiddleware");
+const {
+  addTocartService,
+  getCartItemsService,
+  removeFromCartService,
+} = require("../services/cartsService");
 
 /* 장바구니에 담기 */
 const addTocart = async (req, res) => {
   let { book_id: bookId, quantity } = req.body;
   const { id: userId } = req.user;
 
-  let sql = "SELECT * FROM books WHERE id=?";
-  const [results] = await conn.query(sql, bookId);
-  if (results.length > 0) {
-    // 동일한 물품이 장바구니에 존재하는지 확인
-    sql = "SELECT * FROM cart_items WHERE user_id=? AND book_id=?";
-    let values = [+userId, +bookId];
-    const [results] = await conn.query(sql, values);
-    if (results.length > 0) {
-      // 동일한 물품이 있다면 수량만 수정함
-      quantity = parseInt(quantity) + results[0].quantity;
-      sql = "UPDATE cart_items SET quantity=? WHERE user_id=? AND book_id=?";
-    } else {
-      // 없다면 데이터 그대로 삽입
-      sql = "INSERT INTO cart_items (quantity, user_id, book_id) VALUES(?, ?, ?)";
-    }
-    values = [+quantity, +userId, +bookId];
-    await conn.query(sql, values);
-    return res.status(StatusCodes.CREATED).json({ message: "장바구니에 추가되었습니다." });
-  }
-  throw new CustomError(
-    "해당 도서 id는 존재하지 않습니다. 확인 후 다시 입력해주세요.",
-    StatusCodes.NOT_FOUND,
-  );
+  const { message } = await addTocartService(bookId, quantity, userId);
+  return res.status(StatusCodes.CREATED).json({ message });
 };
 
 /* 장바구니 목록 조회 */
@@ -39,32 +20,11 @@ const getCartItems = async (req, res) => {
   const { selected: cartItemIds } = req.body;
   const { id: userId } = req.user;
 
-  /* 장바구니 전체 목록 조회 */
-  let sql = `SELECT c.id AS cart_item_id, c.book_id, b.title, b.summary, b.price, c.quantity 
-              FROM cart_items AS c INNER JOIN books AS b ON c.book_id = b.id 
-              WHERE c.user_id=?`;
-  const tailSql = " AND c.id IN (?)";
-  let values = [+userId];
-
-  if (cartItemIds) {
-    /* 장바구니에서 선택한 물품 목록(주문 예상 물품 목록) 조회 */
-    values.push(cartItemIds);
-
-    const [results] = await conn.query(sql + tailSql, values);
-    if (results.length > 0) {
-      const items = snakeToCamelData(results);
-      return res.status(StatusCodes.OK).json({ data: { items } });
-    }
-    return res
-      .status(StatusCodes.BAD_REQUEST)
-      .json({ message: "잘못된 정보를 입력하였습니다. 확인 후 다시 입력해주세요." });
+  const { data } = await getCartItemsService(cartItemIds, userId);
+  if (data) {
+    return res.status(StatusCodes.OK).json({ data });
   }
 
-  const [results] = await conn.query(sql, values);
-  if (results.length > 0) {
-    const items = snakeToCamelData(results);
-    return res.status(StatusCodes.OK).json({ data: { items } });
-  }
   return res.status(StatusCodes.NO_CONTENT).json();
 };
 
@@ -73,16 +33,8 @@ const removeFromCart = async (req, res) => {
   const { id: userId } = req.user;
   const { bookId } = req.params;
 
-  const sql = `DELETE FROM cart_items WHERE user_id=? AND book_id=?`;
-  const values = [+userId, +bookId];
-  const [results] = await conn.query(sql, values);
-  if (results.affectedRows > 0) {
-    return res.status(StatusCodes.NO_CONTENT).json();
-  }
-  throw new CustomError(
-    "장바구니에 해당 도서가 담겨있지 않습니다. 다시 입력해주세요.",
-    StatusCodes.NOT_FOUND,
-  );
+  await removeFromCartService(bookId, userId);
+  return res.status(StatusCodes.NO_CONTENT).json();
 };
 
 module.exports = {

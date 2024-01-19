@@ -24,13 +24,13 @@ const handleJsonWebTokenError = (res) =>
 
 const handleSQLError = (res) => {
   return res.status(StatusCodes.BAD_REQUEST).json({
-    message: "잘못된 정보를 입력하였습니다. 확인 후 다시 입력해주세요.",
+    message: "잘못된 요청입니다. 확인 후 다시 시도해주세요.",
   });
 };
 
 const handleServerError = (res) => {
   return res.status(StatusCodes.BAD_REQUEST).json({
-    message: "잘못된 정보를 입력하였습니다. 확인 후 다시 입력해주세요.",
+    message: "서버에 문제가 발생했습니다. 잠시 후 다시 시도해주세요.",
   });
 };
 

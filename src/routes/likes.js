@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 const { authenticateToken } = require("../middlewares/authMiddleware");
-const { likeAndUnlikeBook } = require("../controllers/likeController");
+const { likeAndUnlikeBook } = require("../controllers/likesController");
 
 router.use(authenticateToken);
 router.post("/:bookId", likeAndUnlikeBook);

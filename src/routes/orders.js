@@ -5,7 +5,7 @@ const {
   requestPayment,
   getOrderList,
   getOrderListDetails,
-} = require("../controllers/orderController");
+} = require("../controllers/ordersController");
 const { authenticateToken } = require("../middlewares/authMiddleware");
 
 router.use(authenticateToken);
