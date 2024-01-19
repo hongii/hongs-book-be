@@ -3,57 +3,16 @@ const router = express.Router();
 
 const { body } = require("express-validator");
 const { join, login, requestPwdReset, performPwdReset } = require("../controllers/usersController");
-const { validateInput } = require("../middlewares/validateMiddleware");
+const {
+  validateJoin,
+  validateLogin,
+  validateRequestResetPW,
+  validateResetPW,
+} = require("../middlewares/validateMiddleware");
 
-router.post(
-  "/join",
-  [
-    body("email")
-      .notEmpty()
-      .withMessage("이메일은 필수 입력 정보입니다.")
-      .bail()
-      .isEmail()
-      .withMessage("잘못된 이메일 형식입니다. 올바른 이메일 정보를 입력해주세요."),
-    body("password")
-      .notEmpty()
-      .withMessage("비밀번호는 필수 입력 정보입니다.")
-      .bail()
-      .isLength({ min: 4, max: 16 })
-      .withMessage("비밀번호는 4~16자 이내로 입력해주세요."),
-    validateInput,
-  ],
-  join,
-);
-
-router.post(
-  "/login",
-  [
-    body("email").notEmpty().withMessage("이메일을 입력해주세요."),
-    body("password").notEmpty().withMessage("비밀번호를 입력해주세요."),
-    validateInput,
-  ],
-  login,
-);
-
-router.post(
-  "/reset",
-  [body("email").notEmpty().withMessage("이메일을 입력해주세요."), validateInput],
-  requestPwdReset,
-);
-
-router.put(
-  "/reset",
-  [
-    body("email").notEmpty().withMessage("이메일을 입력해주세요."),
-    body("password")
-      .notEmpty()
-      .withMessage("새롭게 변경할 비밀번호를 입력해주세요.")
-      .bail()
-      .isLength({ min: 4, max: 16 })
-      .withMessage("비밀번호는 4~16자 이내로 입력해주세요."),
-    validateInput,
-  ],
-  performPwdReset,
-);
+router.post("/join", validateJoin, join);
+router.post("/login", validateLogin, login);
+router.post("/reset", validateRequestResetPW, requestPwdReset);
+router.put("/reset", validateResetPW, performPwdReset);
 
 module.exports = router;

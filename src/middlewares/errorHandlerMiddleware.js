@@ -2,14 +2,21 @@ const { StatusCodes, getReasonPhrase } = require("http-status-codes");
 const { TokenExpiredError, JsonWebTokenError } = require("jsonwebtoken");
 
 class CustomError extends Error {
-  constructor(message, statusCode) {
+  constructor(errorMessages, statusCode, multiErrMsg = false) {
+    const message = Array.isArray(errorMessages) ? errorMessages.join(", ") : String(errorMessages);
+
     super(message || getReasonPhrase(statusCode));
     this.name = "CustomError";
     this.statusCode = statusCode || StatusCodes.INTERNAL_SERVER_ERROR;
+    this.multiErrMsg = multiErrMsg;
   }
 }
 
 const handleCustomError = (err, res) => {
+  if (err.multiErrMsg) {
+    const errMsgArr = err.message.split(", ");
+    return res.status(err.statusCode).json({ message: errMsgArr });
+  }
   return res.status(err.statusCode).json({ message: err.message });
 };
 
