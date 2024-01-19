@@ -1,17 +1,7 @@
-const conn = require("../../mariadb").promise();
+const conn = require("../../database/mariadb").promise();
 const { StatusCodes } = require("http-status-codes");
 const { asyncWrapper } = require("../middlewares/asyncWrapperMiddleware");
 const { CustomError } = require("../middlewares/errorHandlerMiddleware");
-
-const getlikesCnt = async (bookId) => {
-  let sql = `SELECT (SELECT COUNT(*) FROM likes WHERE liked_book_id = b.id) AS likes
-            FROM books AS b INNER JOIN categories AS c USING (category_id) 
-            WHERE b.id = ?`;
-  let [results] = await conn.query(sql, bookId);
-  if (results.length > 0) {
-    return results[0].likes;
-  }
-};
 
 /* 좋아요 추가 OR 취소 */
 const likeAndUnlikeBook = async (req, res) => {
@@ -27,7 +17,9 @@ const likeAndUnlikeBook = async (req, res) => {
     values = [+userId, +bookId];
     [results] = await conn.query(sql, values);
     if (results.affectedRows > 0) {
-      let likes = await getlikesCnt(+bookId);
+      sql = `SELECT COUNT(*) AS likes FROM likes WHERE liked_book_id = ?`;
+      const [getLikesResults] = await conn.query(sql, +bookId);
+      let likes = getLikesResults[0].likes;
       return res.status(StatusCodes.OK).json({ data: { likes }, message: "좋아요 취소!" });
     }
   } else {
@@ -36,12 +28,17 @@ const likeAndUnlikeBook = async (req, res) => {
     values = [+userId, +bookId];
     [results] = await conn.query(sql, values);
     if (results.affectedRows > 0) {
-      let likes = await getlikesCnt(+bookId);
+      sql = `SELECT COUNT(*) AS likes FROM likes WHERE liked_book_id = ?`;
+      const [getLikesResults] = await conn.query(sql, +bookId);
+      let likes = getLikesResults[0].likes;
       return res.status(StatusCodes.CREATED).json({ data: { likes }, message: "좋아요 추가!" });
     }
   }
 
-  throw new CustomError("잘못된 요청입니다. 확인 후 다시 시도해주세요.", StatusCodes.BAD_REQUEST);
+  throw new CustomError(
+    "잘못된 정보를 입력하였습니다. 확인 후 다시 입력해주세요.",
+    StatusCodes.BAD_REQUEST,
+  );
 };
 
 module.exports = { likeAndUnlikeBook: asyncWrapper(likeAndUnlikeBook) };
