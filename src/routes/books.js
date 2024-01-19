@@ -1,10 +1,11 @@
 const express = require("express");
 const router = express.Router();
 
-const { getBooksInfo, getBookDetail } = require("../controllers/booksController");
 const { authenticateToken } = require("../middlewares/authMiddleware");
+const { validateGetBooks, validateGetBookDetail } = require("../middlewares/validateMiddleware");
+const { getBooksInfo, getBookDetail } = require("../controllers/booksController");
 
-router.get("/", getBooksInfo);
-router.get("/:bookId", authenticateToken, getBookDetail);
+router.get("/", validateGetBooks, getBooksInfo);
+router.get("/:bookId", validateGetBookDetail, authenticateToken, getBookDetail);
 
 module.exports = router;
