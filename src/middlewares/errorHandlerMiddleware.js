@@ -57,4 +57,10 @@ const errorHandler = (err, req, res, next) => {
   }
 };
 
-module.exports = { CustomError, errorHandler };
+const handleNotFound = (req, res) => {
+  return res.status(StatusCodes.NOT_FOUND).json({
+    message: "요청한 경로를 찾을 수 없습니다.",
+  });
+};
+
+module.exports = { CustomError, errorHandler, handleNotFound };

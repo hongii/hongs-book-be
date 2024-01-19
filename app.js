@@ -12,7 +12,7 @@ const cartsRouter = require("./src/routes/carts");
 const likesRouter = require("./src/routes/likes");
 const ordersRouter = require("./src/routes/orders");
 const categoriesRouter = require("./src/routes/categories");
-const { errorHandler } = require("./src/middlewares/errorHandlerMiddleware");
+const { errorHandler, handleNotFound } = require("./src/middlewares/errorHandlerMiddleware");
 
 app.use(express.json());
 app.use(morgan("dev"));
@@ -24,6 +24,7 @@ app.use("/api/carts", cartsRouter);
 app.use("/api/likes", likesRouter);
 app.use("/api/orders", ordersRouter);
 app.use("/api/categories", categoriesRouter);
+app.use("*", handleNotFound);
 
 app.use(errorHandler);
 
