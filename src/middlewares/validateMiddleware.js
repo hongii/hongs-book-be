@@ -13,4 +13,4 @@ const validateInput = (req, res, next) => {
   return res.status(StatusCodes.BAD_REQUEST).json({ message: errMsg }).end();
 };
 
-module.exports = validateInput;
+module.exports = { validateInput };

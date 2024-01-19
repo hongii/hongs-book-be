@@ -1,11 +1,10 @@
 const express = require("express");
-const app = express();
-
-const dotenv = require("dotenv");
-dotenv.config();
-
+const morgan = require("morgan");
 const cookieParser = require("cookie-parser");
-app.use(cookieParser());
+require("dotenv").config();
+
+const app = express();
+const port = process.env.PORT;
 
 const usersRouter = require("./src/routes/users");
 const booksRouter = require("./src/routes/books");
@@ -13,6 +12,11 @@ const cartsRouter = require("./src/routes/carts");
 const likesRouter = require("./src/routes/likes");
 const ordersRouter = require("./src/routes/orders");
 const categoriesRouter = require("./src/routes/categories");
+const { errorHandler } = require("./src/middlewares/errorHandlerMiddleware");
+
+app.use(express.json());
+app.use(morgan("dev"));
+app.use(cookieParser());
 
 app.use("/api/users", usersRouter);
 app.use("/api/books", booksRouter);
@@ -21,7 +25,8 @@ app.use("/api/likes", likesRouter);
 app.use("/api/orders", ordersRouter);
 app.use("/api/categories", categoriesRouter);
 
-const port = process.env.PORT;
+app.use(errorHandler);
+
 app.listen(port, () => {
   console.log(`Success! Listening on port : ${port}`);
 });

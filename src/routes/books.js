@@ -1,10 +1,10 @@
 const express = require("express");
 const router = express.Router();
-router.use(express.json());
 
-const { getBooksInfo, getBookDetail } = require("../controller/bookController");
+const { getBooksInfo, getBookDetail } = require("../controllers/booksController");
+const { authenticateToken } = require("../middlewares/authMiddleware");
 
 router.get("/", getBooksInfo);
-router.get("/:bookId", getBookDetail);
+router.get("/:bookId", authenticateToken, getBookDetail);
 
 module.exports = router;

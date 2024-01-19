@@ -1,16 +1,17 @@
 const express = require("express");
 const router = express.Router();
-router.use(express.json());
 
 const {
   requestPayment,
   getOrderList,
   getOrderListDetails,
-} = require("../controller/orderController");
-const authenticateToken = require("../middleware/auth");
+} = require("../controllers/ordersController");
+const { authenticateToken } = require("../middlewares/authMiddleware");
 
-router.post("/", authenticateToken, requestPayment);
-router.get("/", authenticateToken, getOrderList);
-router.get("/:orderId", authenticateToken, getOrderListDetails);
+router.use(authenticateToken);
+
+router.post("/", requestPayment);
+router.get("/", getOrderList);
+router.get("/:orderId", getOrderListDetails);
 
 module.exports = router;
