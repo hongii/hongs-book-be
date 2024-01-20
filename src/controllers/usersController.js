@@ -20,13 +20,14 @@ const join = async (req, res) => {
 const login = async (req, res) => {
   const { email, password } = req.body;
 
-  const { data, accessToken } = await loginService(email, password);
+  const { data, accessToken, refreshToken } = await loginService(email, password);
 
-  res.cookie("access_token", accessToken, {
+  res.cookie("refresh_token", refreshToken, {
     httpOnly: true,
     secure: true,
     sameSite: "strict",
-  }); // 추후 refresh token을 httpOnly 쿠키에 담아서 보낼 예정
+  });
+
   res.header("Authorization", `Bearer ${accessToken}`);
 
   return res.status(StatusCodes.OK).json({ data });

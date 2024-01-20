@@ -9,7 +9,7 @@ const privateKey = process.env.PRIVATE_KEY;
 const joinService = async (email, password, name, contact) => {
   // 새로운 회원 데이터 넣기 전에 이미 가입된 회원인지 아닌지 확인
   let sql = `SELECT * FROM users WHERE email = ?`;
-  let [results] = await conn.query(sql, email);
+  let [results] = await conn.query(sql, [email]);
   if (results.length > 0) {
     throw new CustomError(
       "이미 가입된 이메일입니다. 다른 이메일을 입력해주세요.",
@@ -33,7 +33,7 @@ const joinService = async (email, password, name, contact) => {
 /* 로그인 */
 const loginService = async (email, password) => {
   const sql = "SELECT * FROM users WHERE email=?";
-  const [results] = await conn.query(sql, email);
+  const [results] = await conn.query(sql, [email]);
   const targetUser = results[0];
 
   if (targetUser) {
@@ -48,28 +48,39 @@ const loginService = async (email, password) => {
         issuer: process.env.ACCESSTOKEN_ISSUER,
       });
 
-      return {
-        data: {
-          id: targetUser.id,
-          email: targetUser.email,
-          name: targetUser.name,
-          contact: targetUser.contact,
-        },
-        accessToken,
-      };
+      let refreshToken = jwt.sign({ uid: targetUser.id }, privateKey, {
+        expiresIn: process.env.REFRESHTOKEN_LIFETIME,
+        issuer: process.env.REFRESHTOKEN_ISSUER,
+      });
+
+      const sql = "UPDATE users SET refresh_token=? WHERE id=?";
+      const values = [refreshToken, targetUser.id];
+      const [results] = await conn.query(sql, values);
+      if (results.affectedRows > 0) {
+        return {
+          data: {
+            id: targetUser.id,
+            email: targetUser.email,
+            name: targetUser.name,
+            contact: targetUser.contact,
+          },
+          accessToken,
+          refreshToken,
+        };
+      }
     }
   }
 
   throw new CustomError(
     "이메일 또는 비밀번호를 잘못 입력했습니다. 입력하신 내용을 다시 확인해주세요.",
-    StatusCodes.UNAUTHORIZED,
+    StatusCodes.BAD_REQUEST,
   );
 };
 
 /* 비밀번호 초기화 요청(로그인 하기 전, 비밀번호 찾기 기능) */
 const requestPwdResetService = async (email) => {
   const sql = "SELECT * FROM users WHERE email=?";
-  const [results] = await conn.query(sql, email);
+  const [results] = await conn.query(sql, [email]);
   const targetUser = results[0];
   if (targetUser) {
     return { data: { email: targetUser.email } };
