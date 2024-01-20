@@ -39,9 +39,12 @@ const authenticateToken = async (req, res, next) => {
 };
 
 const refreshAccessToken = async (req, res, next) => {
+  const endPoint = req.originalUrl;
   const expired = req.expired;
   if (!expired) {
     return next();
+  } else if (endPoint === "/api/users/logout") {
+    return next(); // logout시에는 굳이 만료된 토큰을 재발급 받을 필요 없지 않을까
   }
 
   const { refresh_token: refreshToken } = req.cookies;
@@ -79,6 +82,8 @@ const refreshAccessToken = async (req, res, next) => {
         httpOnly: true,
         secure: true,
         sameSite: "strict",
+        path: "/",
+        maxAge: 1000 * 60 * 60 * 24 * 14, // 14일
       });
 
       /* 프론트 측에서는 서버로부터 받는 응답에서 매번 Authorization헤더를 확인해야한다. 

@@ -5,6 +5,7 @@ const {
   loginService,
   performPwdResetService,
   requestPwdResetService,
+  logoutService,
 } = require("../services/usersService");
 require("dotenv").config();
 
@@ -26,11 +27,29 @@ const login = async (req, res) => {
     httpOnly: true,
     secure: true,
     sameSite: "strict",
+    path: "/",
+    maxAge: 1000 * 60 * 60 * 24 * 14,
   });
 
   res.header("Authorization", `Bearer ${accessToken}`);
 
   return res.status(StatusCodes.OK).json({ data });
+};
+
+/* 로그아웃 */
+const logout = async (req, res) => {
+  const { id: userId } = req.user;
+  const { message } = await logoutService(userId);
+
+  res.cookie("refresh_token", "", {
+    httpOnly: true,
+    secure: true,
+    sameSite: "Strict",
+    path: "/",
+    maxAge: 0,
+  });
+  res.header("Authorization", "logout");
+  return res.status(StatusCodes.OK).json({ message });
 };
 
 /* 비밀번호 초기화 요청(로그인 하기 전, 비밀번호 찾기 기능) */
@@ -52,6 +71,7 @@ const performPwdReset = async (req, res) => {
 module.exports = {
   join: asyncWrapper(join),
   login: asyncWrapper(login),
+  logout: asyncWrapper(logout),
   requestPwdReset: asyncWrapper(requestPwdReset),
   performPwdReset: asyncWrapper(performPwdReset),
 };

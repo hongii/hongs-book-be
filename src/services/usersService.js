@@ -48,6 +48,7 @@ const loginService = async (email, password) => {
         issuer: process.env.ACCESSTOKEN_ISSUER,
       });
 
+      // const refreshTokenExp = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 14; //14일
       let refreshToken = jwt.sign({ uid: targetUser.id }, privateKey, {
         expiresIn: process.env.REFRESHTOKEN_LIFETIME,
         issuer: process.env.REFRESHTOKEN_ISSUER,
@@ -75,6 +76,17 @@ const loginService = async (email, password) => {
     "이메일 또는 비밀번호를 잘못 입력했습니다. 입력하신 내용을 다시 확인해주세요.",
     StatusCodes.BAD_REQUEST,
   );
+};
+
+const logoutService = async (userId) => {
+  const sql = `UPDATE users SET refresh_token=? WHERE id=?`;
+  const values = ["", userId];
+  const [results] = await conn.query(sql, values);
+  if (results.affectedRows === 1) {
+    return { message: "로그아웃 되었습니다." };
+  }
+
+  throw new CustomError("잘못된 요청입니다. 확인 후 다시 시도해주세요.", StatusCodes.BAD_REQUEST);
 };
 
 /* 비밀번호 초기화 요청(로그인 하기 전, 비밀번호 찾기 기능) */
@@ -108,4 +120,10 @@ const performPwdResetService = async (email, newPW) => {
   throw new CustomError("잘못된 요청입니다. 확인 후 다시 시도해주세요.", StatusCodes.BAD_REQUEST);
 };
 
-module.exports = { joinService, loginService, requestPwdResetService, performPwdResetService };
+module.exports = {
+  joinService,
+  loginService,
+  logoutService,
+  requestPwdResetService,
+  performPwdResetService,
+};
