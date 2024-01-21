@@ -20,7 +20,7 @@ const requestPaymentService = async (
     // 트랜잭션 시작
     await conn.beginTransaction();
 
-    // DB의 cart_items 담긴 정보와 요청 받은 정보가 일치하는지 확인하는 작업 선행
+    // DB의 cart_items에 저장되어 있는 데이터와 요청 받은 정보가 일치하는지 확인하는 작업 선행
     let sql = `SELECT * FROM cart_items WHERE id IN (?)`;
     const itemIds = items.map((obj) => obj.cartItemId);
     const [checkResults] = await conn.query(sql, [itemIds]);
@@ -40,6 +40,11 @@ const requestPaymentService = async (
         ) {
           throw new CustomError(" (장바구니 정보와 일치하지 않습니다.)", StatusCodes.BAD_REQUEST);
         }
+      }
+
+      const checkTotalQuantity = checkResults.reduce((acc, obj) => acc + obj.quantity, 0);
+      if (totalQuantity !== checkTotalQuantity) {
+        throw new CustomError(" (장바구니 정보와 일치하지 않습니다.)", StatusCodes.BAD_REQUEST);
       }
 
       sql = `INSERT INTO deliveries (address, receiver, contact) VALUES(?, ?, ?)`;
@@ -76,7 +81,7 @@ const requestPaymentService = async (
       await conn.commit();
       return { message: RESPONSE_MESSAGES.ORDER_SUCCESS };
     }
-    throw new CustomError(ERROR_MESSAGES.ORDER_ERROR, StatusCodes.BAD_REQUEST);
+    throw new CustomError(" (장바구니 정보와 일치하지 않습니다.)", StatusCodes.BAD_REQUEST);
   } catch (err) {
     await conn.rollback(); // 트랜잭션 롤백
     if (err.message !== ERROR_MESSAGES.ORDER_ERROR) {
