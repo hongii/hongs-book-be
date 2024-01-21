@@ -10,12 +10,12 @@ const RESPONSE_MESSAGES = {
 
 const addTocartService = async (bookId, quantity, userId) => {
   let sql = "SELECT * FROM books WHERE id=?";
-  const [results] = await conn.query(sql, bookId);
+  let [results] = await conn.query(sql, [+bookId]);
   if (results.length > 0) {
     // 동일한 물품이 장바구니에 존재하는지 확인
     sql = "SELECT * FROM cart_items WHERE user_id=? AND book_id=?";
     let values = [+userId, +bookId];
-    const [results] = await conn.query(sql, values);
+    [results] = await conn.query(sql, values);
     if (results.length > 0) {
       // 동일한 물품이 있다면 수량만 수정함
       quantity = parseInt(quantity) + results[0].quantity;
