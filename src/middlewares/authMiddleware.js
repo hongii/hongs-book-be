@@ -1,5 +1,5 @@
 const { asyncWrapper } = require("../middlewares/asyncWrapperMiddleware");
-const { CustomError } = require("../middlewares/errorHandlerMiddleware");
+const { CustomError, ERROR_MESSAGES } = require("../middlewares/errorHandlerMiddleware");
 const { StatusCodes } = require("http-status-codes");
 const conn = require("../../database/mariadb").promise();
 const jwt = require("jsonwebtoken");
@@ -15,10 +15,7 @@ const authenticateToken = async (req, res, next) => {
         로그인하지 않은 유저일 경우, 해당 도서를 좋아요 눌렀는지 여부(is_liked)를 그냥 false로 설정함 */
       return next();
     } else {
-      throw new CustomError(
-        "로그인이 필요합니다. 로그인 후 이용해주세요.",
-        StatusCodes.UNAUTHORIZED,
-      );
+      throw new CustomError(ERROR_MESSAGES.LOGIN_REQUIRED, StatusCodes.UNAUTHORIZED);
     }
   }
 
@@ -29,6 +26,7 @@ const authenticateToken = async (req, res, next) => {
     return next();
   } catch (err) {
     if (err instanceof jwt.TokenExpiredError) {
+      console.log("Access token expired.");
       const { uid } = jwt.decode(accessToken);
       req.user = { id: uid };
       req.expired = true;
@@ -49,10 +47,7 @@ const refreshAccessToken = async (req, res, next) => {
 
   const { refresh_token: refreshToken } = req.cookies;
   if (!refreshToken) {
-    throw new CustomError(
-      "로그인(인증) 토큰이 만료되었습니다. 다시 로그인 후 사용해주세요.",
-      StatusCodes.UNAUTHORIZED,
-    );
+    throw new CustomError(ERROR_MESSAGES.TOKEN_EXPIRED, StatusCodes.UNAUTHORIZED);
   }
 
   const { id: userId } = req.user;
@@ -77,7 +72,7 @@ const refreshAccessToken = async (req, res, next) => {
     values = [newRefreshToken, targetUser.id];
     [results] = await conn.query(sql, values);
 
-    if (results.affectedRows > 0) {
+    if (results.affectedRows === 1) {
       res.cookie("refresh_token", newRefreshToken, {
         httpOnly: true,
         secure: true,
@@ -91,14 +86,12 @@ const refreshAccessToken = async (req, res, next) => {
       Authorization헤더에 값이 있다면, 서버측에서 기존 accesstoken이 만료되어 새롭게 발급해준 access token이라고 간주하고 
       private변수에 새롭게 발급받은 access token을 다시 저장하면 된다.*/
       res.header("Authorization", `Bearer ${newAccessToken}`);
+      console.log("Access token refreshed.");
       return next();
     }
   }
-  throw new CustomError(
-    "refresh token정보가 일치하지 않습니다. 다시 로그인 후 사용해주세요.",
-    StatusCodes.FORBIDDEN,
-  );
-  // 프론트에서는 401 또는 403 응답을 받으면 로그인 페이지로 이동 시키기(재로그인)
+  throw new CustomError(ERROR_MESSAGES.REFRESH_TOKEN_MISMATCH, StatusCodes.UNAUTHORIZED);
+  // 프론트에서는 401응답을 받으면 로그인 페이지로 이동 시키기(재로그인)
 };
 
 module.exports = {

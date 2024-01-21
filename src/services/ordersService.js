@@ -1,7 +1,12 @@
 const conn = require("../../database/mariadb").promise();
 const { StatusCodes } = require("http-status-codes");
 const { snakeToCamelData } = require("../utils/convertSnakeToCamel");
-const { CustomError } = require("../middlewares/errorHandlerMiddleware");
+const { CustomError, ERROR_MESSAGES } = require("../middlewares/errorHandlerMiddleware");
+
+const RESPONSE_MESSAGES = {
+  ORDER_SUCCESS: "주문이 완료되었습니다.",
+  EMPTY_ORDER_LIST: "주문 내역이 없습니다.",
+};
 
 const requestPaymentService = async (
   items,
@@ -18,13 +23,13 @@ const requestPaymentService = async (
   let values = [delivery.address, delivery.receiver, delivery.contact];
   const [insertDeliveriesResults] = await conn.query(sql, values);
 
-  const deleveryId = insertDeliveriesResults.insertId;
+  const deliveryId = insertDeliveriesResults?.insertId;
   sql = `INSERT INTO orders (delivery_id, user_id, main_book_title, total_price, total_quantity) 
               VALUES(?, ?, ?, ?, ?)`;
-  values = [deleveryId, userId, mainBookTitle, totalPrice, totalQuantity];
+  values = [deliveryId, userId, mainBookTitle, totalPrice, totalQuantity];
   const [insertOrdersResults] = await conn.query(sql, values);
 
-  const orderId = insertOrdersResults.insertId;
+  const orderId = insertOrdersResults?.insertId;
   sql = `INSERT INTO ordered_books (order_id, book_id, quantity) VALUES ?`; // MULTI-INSERT
   values = [];
   for (let i = 0; i < items.length; i++) {
@@ -33,7 +38,7 @@ const requestPaymentService = async (
   const [insertOrederedBookresults] = await conn.query(sql, [values]);
   if (insertOrederedBookresults.affectedRows === 0) {
     await conn.rollback(); // 트랜잭션 롤백
-    throw new CustomError("결제 진행 중 오류가 발생했습니다.", StatusCodes.BAD_REQUEST);
+    throw new CustomError(ERROR_MESSAGES.ORDER_ERROR, StatusCodes.BAD_REQUEST);
   }
   // 주문한 상품은 장바구니에서 삭제하기
   const itemIds = items.map((obj) => obj.cartItemId);
@@ -41,12 +46,12 @@ const requestPaymentService = async (
   const [deleteResults] = await conn.query(sql, [itemIds]);
   if (deleteResults.affectedRows !== items.length) {
     await conn.rollback(); // 트랜잭션 롤백
-    throw new CustomError("결제 진행 중 오류가 발생했습니다.", StatusCodes.BAD_REQUEST);
+    throw new CustomError(ERROR_MESSAGES.ORDER_ERROR, StatusCodes.BAD_REQUEST);
   }
 
   // 트랜잭션 커밋 완료
   await conn.commit();
-  return { message: "주문이 완료되었습니다." };
+  return { message: RESPONSE_MESSAGES.ORDER_SUCCESS };
 };
 
 const getOrderListService = async (userId) => {
@@ -72,9 +77,9 @@ const getOrderListService = async (userId) => {
       });
       return { ...newObj, delivery };
     });
-    return { data: { orders } };
+    return { data: { orders }, message: null };
   }
-  return { data: null };
+  return { data: {}, message: RESPONSE_MESSAGES.EMPTY_ORDER_LIST };
 };
 
 const getOrderListDetailsService = async (orderId, userId) => {
@@ -86,10 +91,12 @@ const getOrderListDetailsService = async (orderId, userId) => {
             FROM ordered_books AS o INNER JOIN books AS b ON o.book_id=b.id 
             WHERE order_id =?`;
     const [results] = await conn.query(sql, +orderId);
-    const orderDetail = snakeToCamelData(results);
-    return { data: { orderDetail } };
+    if (results.length > 0) {
+      const orderDetail = snakeToCamelData(results);
+      return { data: { orderDetail } };
+    }
   }
-  throw new CustomError("잘못된 요청입니다. 확인 후 다시 시도해주세요.", StatusCodes.BAD_REQUEST);
+  throw new CustomError(ERROR_MESSAGES.BAD_REQUEST, StatusCodes.BAD_REQUEST);
 };
 
 module.exports = { requestPaymentService, getOrderListService, getOrderListDetailsService };

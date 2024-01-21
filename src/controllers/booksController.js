@@ -6,8 +6,8 @@ const { getBooksInfoService, getBookDetailService } = require("../services/books
 const getBooksInfo = async (req, res) => {
   let { category_id: categoryId, new: isNew, page, limit } = req.query;
 
-  const { data } = await getBooksInfoService(categoryId, isNew, page, limit);
-  return res.status(StatusCodes.OK).json({ data });
+  const { data, message } = await getBooksInfoService(categoryId, isNew, page, limit);
+  return res.status(StatusCodes.OK).json({ data, message });
 };
 
 /* 개별 도서 조회 */

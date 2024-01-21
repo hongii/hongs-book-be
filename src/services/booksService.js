@@ -1,7 +1,12 @@
 const conn = require("../../database/mariadb").promise();
 const { StatusCodes } = require("http-status-codes");
 const { snakeToCamelData } = require("../utils/convertSnakeToCamel");
-const { CustomError } = require("../middlewares/errorHandlerMiddleware");
+const { CustomError, ERROR_MESSAGES } = require("../middlewares/errorHandlerMiddleware");
+
+const RESPONSE_MESSAGES = {
+  NO_BOOKS: "조회 가능한 도서가 없습니다.",
+  NO_RECENTLY_PUBLISHED_BOOKS: "지난 30일 이내에 출간된 새로운 도서가 없습니다.",
+};
 
 const getBooksInfoService = async (categoryId, isNew, page, limit) => {
   // 아래 변수들의 default값은 전체 도서 목록 조회 기준
@@ -12,7 +17,7 @@ const getBooksInfoService = async (categoryId, isNew, page, limit) => {
                 (SELECT count(*) FROM books) AS total_books
               FROM books AS b INNER JOIN categories AS c USING (category_id)`;
   let tailSql = " LIMIT ? OFFSET ?";
-  let errMessage = "조회 가능한 도서가 없습니다.";
+  let message = RESPONSE_MESSAGES.NO_BOOKS;
   let values = [limit, offset];
 
   if (categoryId) {
@@ -25,26 +30,23 @@ const getBooksInfoService = async (categoryId, isNew, page, limit) => {
       if (isNew) {
         // 카테고리 별 신간 도서 목록 조회(출판일이 현재 일자 기준으로 30일 이내인 도서)
         sql = `${sql} WHERE category_id=? AND published_date BETWEEN DATE_SUB(CURDATE(), INTERVAL 30 DAY) AND CURDATE()`;
-        errMessage =
+        message =
           page > 1
-            ? "잘못된 요청입니다. 확인 후 다시 시도해주세요."
-            : `${categoryName} 카테고리에는 지난 30일 이내에 출간된 새로운 도서가 없습니다.`;
+            ? ERROR_MESSAGES.BAD_REQUEST
+            : `${categoryName} 카테고리에는 ${RESPONSE_MESSAGES.NO_RECENTLY_PUBLISHED_BOOKS}`;
       } else {
         // 카테고리 별 도서 목록 조회
         sql = `${sql} WHERE category_id=?`;
-        errMessage =
+        message =
           page > 1
-            ? "잘못된 요청입니다. 확인 후 다시 시도해주세요."
-            : `${categoryName} 카테고리에는 조회 가능한 도서가 없습니다.`;
+            ? ERROR_MESSAGES.BAD_REQUEST
+            : `${categoryName} 카테고리에는 ${RESPONSE_MESSAGES.NO_BOOKS}`;
       }
     }
   } else if (!categoryId && isNew) {
     // 신간 도서 목록 조회 (전체 카테고리 통합)
     sql = `${sql} WHERE published_date BETWEEN DATE_SUB(CURDATE(), INTERVAL 30 DAY) AND CURDATE()`;
-    errMessage =
-      page > 1
-        ? "잘못된 요청입니다. 확인 후 다시 시도해주세요."
-        : "30일 이내에 출간된 신간 도서가 없습니다.";
+    message = page > 1 ? ERROR_MESSAGES.BAD_REQUEST : RESPONSE_MESSAGES.NO_RECENTLY_PUBLISHED_BOOKS;
   }
 
   const [results] = await conn.query(sql + tailSql, values);
@@ -54,9 +56,13 @@ const getBooksInfoService = async (categoryId, isNew, page, limit) => {
       .filter(([key]) => key !== "category_id")
       .map((arr) => arr[1]);
     books = snakeToCamelData(books);
-    return { data: { books, pagination: { totalBooks, page } } };
+    return { data: { books, pagination: { totalBooks, page } }, message: null };
   }
-  throw new CustomError(errMessage, StatusCodes.NOT_FOUND);
+
+  if (message === ERROR_MESSAGES.BAD_REQUEST) {
+    throw new CustomError(message, StatusCodes.BAD_REQUEST);
+  }
+  return { data: {}, message };
 };
 
 const getBookDetailService = async (bookId, userId) => {
@@ -86,7 +92,7 @@ const getBookDetailService = async (bookId, userId) => {
     data = snakeToCamelData(data);
     return { data };
   }
-  throw new CustomError("존재하지 않는 도서입니다.", StatusCodes.NOT_FOUND);
+  throw new CustomError(ERROR_MESSAGES.BOOKS_NOT_FOUND, StatusCodes.NOT_FOUND);
 };
 
 module.exports = { getBooksInfoService, getBookDetailService };

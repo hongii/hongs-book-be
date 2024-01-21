@@ -1,16 +1,18 @@
 const conn = require("../../database/mariadb").promise();
-const { StatusCodes } = require("http-status-codes");
 const { snakeToCamelData } = require("../utils/convertSnakeToCamel");
-const { CustomError } = require("../middlewares/errorHandlerMiddleware");
+
+const RESPONSE_MESSAGES = {
+  EMPTY_CATEGORY_LIST: "카테고리 목록이 비어있습니다.",
+};
 
 const getAllCategoriesService = async () => {
   const sql = `SELECT * FROM categories`;
   const [results] = await conn.query(sql);
   if (results.length > 0) {
     const categories = snakeToCamelData(results);
-    return { data: { categories } };
+    return { data: { categories }, message: null };
   }
-  throw new CustomError("조회 가능한 도서가 없습니다.", StatusCodes.NOT_FOUND);
+  return { data: {}, message: RESPONSE_MESSAGES.EMPTY_CATEGORY_LIST };
 };
 
 module.exports = { getAllCategoriesService };
