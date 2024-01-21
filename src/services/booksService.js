@@ -9,7 +9,7 @@ const RESPONSE_MESSAGES = {
 };
 
 const getBooksInfoService = async (categoryId, isNew, page, limit) => {
-  // 아래 변수들의 default값은 전체 도서 목록 조회 기준
+  // 전체 도서 목록 조회
   limit = parseInt(limit);
   let offset = (+page - 1) * limit;
   let sql = `SELECT b.*, c.category_name,

@@ -11,6 +11,7 @@ const RESPONSE_MESSAGES = {
   LOGOUT_SUCCESS: "로그아웃 되었습니다.",
   RESET_PASSWORD: "비밀번호가 변경되었습니다.",
 };
+
 const joinService = async (email, password, name, contact) => {
   // 새로운 회원 데이터 넣기 전에 이미 가입된 회원인지 아닌지 확인
   let sql = `SELECT * FROM users WHERE email = ?`;
@@ -102,7 +103,6 @@ const requestPwdResetService = async (email) => {
 
 /* 비밀번호 초기화(새로운 비밀번호로 변경하는 기능) */
 const performPwdResetService = async (email, newPW) => {
-  // .EMAIL_NOT_FOUND비밀번호 암호화
   const salt = crypto.randomBytes(32).toString("base64");
   const hashPassword = crypto.pbkdf2Sync(newPW, salt, 10000, 32, "sha512").toString("base64");
 

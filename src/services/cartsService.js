@@ -36,7 +36,7 @@ const addTocartService = async (bookId, quantity, userId) => {
 };
 
 const getCartItemsService = async (cartItemIds, userId) => {
-  /* 장바구니 전체 목록 조회 */
+  // 장바구니 전체 목록 조회
   let sql = `SELECT c.id AS cart_item_id, c.book_id, b.title, b.summary, b.price, c.quantity 
               FROM cart_items AS c INNER JOIN books AS b ON c.book_id = b.id 
               WHERE c.user_id=?`;
@@ -44,7 +44,7 @@ const getCartItemsService = async (cartItemIds, userId) => {
   let values = [+userId];
 
   if (cartItemIds) {
-    /* 장바구니에서 선택한 물품 목록(주문 예상 물품 목록) 조회 */
+    // 장바구니에서 선택한 물품 목록(주문 예상 물품 목록) 조회
     values.push(cartItemIds);
 
     const [selectedItemsResults] = await conn.query(sql + tailSql, values);

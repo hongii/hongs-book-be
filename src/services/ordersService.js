@@ -17,7 +17,6 @@ const requestPaymentService = async (
   userId,
 ) => {
   try {
-    // 트랜잭션 시작
     await conn.beginTransaction();
 
     // DB의 cart_items에 저장되어 있는 데이터와 요청 받은 정보가 일치하는지 확인하는 작업 선행
@@ -65,7 +64,6 @@ const requestPaymentService = async (
       }
       const [insertOrederedBookresults] = await conn.query(sql, [values]);
       if (insertOrederedBookresults.affectedRows === 0) {
-        await conn.rollback(); // 트랜잭션 롤백
         throw new CustomError(ERROR_MESSAGES.ORDER_ERROR, StatusCodes.BAD_REQUEST);
       }
 
@@ -73,22 +71,20 @@ const requestPaymentService = async (
       sql = "DELETE FROM cart_items WHERE id IN(?)";
       const [deleteResults] = await conn.query(sql, [itemIds]);
       if (deleteResults.affectedRows !== items.length) {
-        await conn.rollback(); // 트랜잭션 롤백
         throw new CustomError(ERROR_MESSAGES.ORDER_ERROR, StatusCodes.BAD_REQUEST);
       }
 
-      // 트랜잭션 커밋 완료
       await conn.commit();
       return { message: RESPONSE_MESSAGES.ORDER_SUCCESS };
     }
     throw new CustomError(" (장바구니 정보와 일치하지 않습니다.)", StatusCodes.BAD_REQUEST);
   } catch (err) {
-    await conn.rollback(); // 트랜잭션 롤백
+    await conn.rollback();
+
     if (err.message !== ERROR_MESSAGES.ORDER_ERROR) {
       err.message = ERROR_MESSAGES.ORDER_ERROR + err.message;
       throw new CustomError(err.message, StatusCodes.BAD_REQUEST);
     }
-
     throw new CustomError(ERROR_MESSAGES.ORDER_ERROR, StatusCodes.BAD_REQUEST);
   }
 };

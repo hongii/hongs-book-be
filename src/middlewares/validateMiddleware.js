@@ -132,7 +132,6 @@ const validateChainIntArr = (path) => {
     .withMessage(`${path}의 데이터 형식이 틀렸습니다.`);
 };
 
-// 주문api의 items
 const validateChainObjArr = (path) => {
   return body(path)
     .isArray({ min: 1 })
