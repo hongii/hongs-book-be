@@ -96,7 +96,9 @@ const validateChainIsString = (location, path, opt = false) => {
   if (opt) locationMethod = locationMethod.optional();
 
   return locationMethod
-    .isString()
+    .custom((str) => {
+      return str && typeof str === "string" && str.trim().length > 0;
+    })
     .withMessage(`${location}의 ${path}는 ${opt ? "" : "필수 정보이며 "}string타입이어야 합니다.`);
 };
 
@@ -109,8 +111,11 @@ const validateChainStringObj = (path) => {
         obj.hasOwnProperty("receiver") &&
         obj.hasOwnProperty("contact") &&
         typeof obj.address === "string" &&
+        obj.address.trim().length > 0 &&
         typeof obj.receiver === "string" &&
-        typeof obj.contact === "string"
+        obj.receiver.trim().length > 0 &&
+        typeof obj.contact === "string" &&
+        obj.contact.trim().length > 0
       );
     })
     .withMessage(`${path}의 데이터 형식이 틀렸습니다.`);
@@ -127,7 +132,6 @@ const validateChainIntArr = (path) => {
     .withMessage(`${path}의 데이터 형식이 틀렸습니다.`);
 };
 
-// 주문api의 items
 const validateChainObjArr = (path) => {
   return body(path)
     .isArray({ min: 1 })
@@ -139,7 +143,9 @@ const validateChainObjArr = (path) => {
           obj.hasOwnProperty("bookId") &&
           obj.hasOwnProperty("quantity") &&
           Number.isInteger(obj.cartItemId) &&
+          obj.cartItemId > 0 &&
           Number.isInteger(obj.bookId) &&
+          obj.bookId > 0 &&
           Number.isInteger(obj.quantity),
       );
     })

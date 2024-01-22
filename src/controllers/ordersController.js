@@ -26,11 +26,8 @@ const requestPayment = async (req, res) => {
 const getOrderList = async (req, res) => {
   const { id: userId } = req.user;
 
-  const { data } = await getOrderListService(userId);
-  if (data) {
-    return res.status(StatusCodes.OK).json({ data });
-  }
-  return res.status(StatusCodes.NO_CONTENT).json(); // 주문 내역 없는 경우
+  const { data, message } = await getOrderListService(userId);
+  return res.status(StatusCodes.OK).json({ data, message });
 };
 
 /* 주문 내역의 상품 상세 조회 */

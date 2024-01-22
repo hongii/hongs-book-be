@@ -6,10 +6,10 @@ const {
   validateGetCartItems,
   validateRemoveFromCart,
 } = require("../middlewares/validateMiddleware");
-const { authenticateToken } = require("../middlewares/authMiddleware");
+const { authenticateToken, refreshAccessToken } = require("../middlewares/authMiddleware");
 const { addTocart, getCartItems, removeFromCart } = require("../controllers/cartsController");
 
-router.use(authenticateToken);
+router.use(authenticateToken, refreshAccessToken);
 
 router.post("/", validateGetAddToCart, addTocart);
 router.get("/", validateGetCartItems, getCartItems);

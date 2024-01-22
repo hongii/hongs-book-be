@@ -8,7 +8,7 @@ const {
 
 /* 장바구니에 담기 */
 const addTocart = async (req, res) => {
-  let { book_id: bookId, quantity } = req.body;
+  let { bookId, quantity } = req.body;
   const { id: userId } = req.user;
 
   const { message } = await addTocartService(bookId, quantity, userId);
@@ -20,12 +20,8 @@ const getCartItems = async (req, res) => {
   const { selected: cartItemIds } = req.body;
   const { id: userId } = req.user;
 
-  const { data } = await getCartItemsService(cartItemIds, userId);
-  if (data) {
-    return res.status(StatusCodes.OK).json({ data });
-  }
-
-  return res.status(StatusCodes.NO_CONTENT).json();
+  const { data, message } = await getCartItemsService(cartItemIds, userId);
+  return res.status(StatusCodes.OK).json({ data, message });
 };
 
 /* 장바구니에서 물품 제거 */

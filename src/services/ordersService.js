@@ -1,7 +1,12 @@
 const conn = require("../../database/mariadb").promise();
 const { StatusCodes } = require("http-status-codes");
 const { snakeToCamelData } = require("../utils/convertSnakeToCamel");
-const { CustomError } = require("../middlewares/errorHandlerMiddleware");
+const { CustomError, ERROR_MESSAGES } = require("../middlewares/errorHandlerMiddleware");
+
+const RESPONSE_MESSAGES = {
+  ORDER_SUCCESS: "주문이 완료되었습니다.",
+  EMPTY_ORDER_LIST: "주문 내역이 없습니다.",
+};
 
 const requestPaymentService = async (
   items,
@@ -11,42 +16,77 @@ const requestPaymentService = async (
   mainBookTitle,
   userId,
 ) => {
-  // 트랜잭션 시작
-  await conn.beginTransaction();
+  try {
+    await conn.beginTransaction();
 
-  let sql = "INSERT INTO deliveries (address, receiver, contact) VALUES(?, ?, ?)";
-  let values = [delivery.address, delivery.receiver, delivery.contact];
-  const [insertDeliveriesResults] = await conn.query(sql, values);
+    // DB의 cart_items에 저장되어 있는 데이터와 요청 받은 정보가 일치하는지 확인하는 작업 선행
+    let sql = `SELECT * FROM cart_items WHERE id IN (?)`;
+    const itemIds = items.map((obj) => obj.cartItemId);
+    const [checkResults] = await conn.query(sql, [itemIds]);
+    if (checkResults.length === itemIds.length) {
+      const requestItems = [];
+      items.sort((obj1, obj2) => obj1.cartItemId - obj2.cartItemId);
+      for (let i = 0; i < items.length; i++) {
+        requestItems.push([items[i].cartItemId, userId, items[i].bookId, items[i].quantity]);
+      }
 
-  const deleveryId = insertDeliveriesResults.insertId;
-  sql = `INSERT INTO orders (delivery_id, user_id, main_book_title, total_price, total_quantity) 
+      for (let i = 0; i < itemIds.length; i++) {
+        if (
+          checkResults[i].id !== requestItems[i][0] ||
+          checkResults[i].user_id !== requestItems[i][1] ||
+          checkResults[i].book_id !== requestItems[i][2] ||
+          checkResults[i].quantity !== requestItems[i][3]
+        ) {
+          throw new CustomError(" (장바구니 정보와 일치하지 않습니다.)", StatusCodes.BAD_REQUEST);
+        }
+      }
+
+      const checkTotalQuantity = checkResults.reduce((acc, obj) => acc + obj.quantity, 0);
+      if (totalQuantity !== checkTotalQuantity) {
+        throw new CustomError(" (장바구니 정보와 일치하지 않습니다.)", StatusCodes.BAD_REQUEST);
+      }
+
+      sql = `INSERT INTO deliveries (address, receiver, contact) VALUES(?, ?, ?)`;
+      values = [delivery.address, delivery.receiver, delivery.contact];
+      const [insertDeliveriesResults] = await conn.query(sql, values);
+
+      const deliveryId = insertDeliveriesResults?.insertId;
+      sql = `INSERT INTO orders (delivery_id, user_id, main_book_title, total_price, total_quantity) 
               VALUES(?, ?, ?, ?, ?)`;
-  values = [deleveryId, userId, mainBookTitle, totalPrice, totalQuantity];
-  const [insertOrdersResults] = await conn.query(sql, values);
+      values = [deliveryId, userId, mainBookTitle, totalPrice, totalQuantity];
+      const [insertOrdersResults] = await conn.query(sql, values);
 
-  const orderId = insertOrdersResults.insertId;
-  sql = `INSERT INTO ordered_books (order_id, book_id, quantity) VALUES ?`; // MULTI-INSERT
-  values = [];
-  for (let i = 0; i < items.length; i++) {
-    values.push([orderId, items[i].bookId, items[i].quantity]);
-  }
-  const [insertOrederedBookresults] = await conn.query(sql, [values]);
-  if (insertOrederedBookresults.affectedRows === 0) {
-    await conn.rollback(); // 트랜잭션 롤백
-    throw new CustomError("결제 진행 중 오류가 발생했습니다.", StatusCodes.BAD_REQUEST);
-  }
-  // 주문한 상품은 장바구니에서 삭제하기
-  const itemIds = items.map((obj) => obj.cartItemId);
-  sql = "DELETE FROM cart_items WHERE id IN(?)";
-  const [deleteResults] = await conn.query(sql, [itemIds]);
-  if (deleteResults.affectedRows !== items.length) {
-    await conn.rollback(); // 트랜잭션 롤백
-    throw new CustomError("결제 진행 중 오류가 발생했습니다.", StatusCodes.BAD_REQUEST);
-  }
+      const orderId = insertOrdersResults?.insertId;
+      sql = `INSERT INTO ordered_books (order_id, book_id, quantity) VALUES ?`; // MULTI-INSERT
+      values = [];
+      for (let i = 0; i < items.length; i++) {
+        values.push([orderId, items[i].bookId, items[i].quantity]);
+      }
+      const [insertOrederedBookresults] = await conn.query(sql, [values]);
+      if (insertOrederedBookresults.affectedRows === 0) {
+        throw new CustomError(ERROR_MESSAGES.ORDER_ERROR, StatusCodes.BAD_REQUEST);
+      }
 
-  // 트랜잭션 커밋 완료
-  await conn.commit();
-  return { message: "주문이 완료되었습니다." };
+      // 주문한 상품은 장바구니에서 삭제하기
+      sql = "DELETE FROM cart_items WHERE id IN(?)";
+      const [deleteResults] = await conn.query(sql, [itemIds]);
+      if (deleteResults.affectedRows !== items.length) {
+        throw new CustomError(ERROR_MESSAGES.ORDER_ERROR, StatusCodes.BAD_REQUEST);
+      }
+
+      await conn.commit();
+      return { message: RESPONSE_MESSAGES.ORDER_SUCCESS };
+    }
+    throw new CustomError(" (장바구니 정보와 일치하지 않습니다.)", StatusCodes.BAD_REQUEST);
+  } catch (err) {
+    await conn.rollback();
+
+    if (err.message !== ERROR_MESSAGES.ORDER_ERROR) {
+      err.message = ERROR_MESSAGES.ORDER_ERROR + err.message;
+      throw new CustomError(err.message, StatusCodes.BAD_REQUEST);
+    }
+    throw new CustomError(ERROR_MESSAGES.ORDER_ERROR, StatusCodes.BAD_REQUEST);
+  }
 };
 
 const getOrderListService = async (userId) => {
@@ -72,9 +112,9 @@ const getOrderListService = async (userId) => {
       });
       return { ...newObj, delivery };
     });
-    return { data: { orders } };
+    return { data: { orders }, message: null };
   }
-  return { data: null };
+  return { data: {}, message: RESPONSE_MESSAGES.EMPTY_ORDER_LIST };
 };
 
 const getOrderListDetailsService = async (orderId, userId) => {
@@ -86,10 +126,12 @@ const getOrderListDetailsService = async (orderId, userId) => {
             FROM ordered_books AS o INNER JOIN books AS b ON o.book_id=b.id 
             WHERE order_id =?`;
     const [results] = await conn.query(sql, +orderId);
-    const orderDetail = snakeToCamelData(results);
-    return { data: { orderDetail } };
+    if (results.length > 0) {
+      const orderDetail = snakeToCamelData(results);
+      return { data: { orderDetail } };
+    }
   }
-  throw new CustomError("잘못된 요청입니다. 확인 후 다시 시도해주세요.", StatusCodes.BAD_REQUEST);
+  throw new CustomError(ERROR_MESSAGES.BAD_REQUEST, StatusCodes.BAD_REQUEST);
 };
 
 module.exports = { requestPaymentService, getOrderListService, getOrderListDetailsService };
