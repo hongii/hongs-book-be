@@ -35,7 +35,7 @@ const getOrderListDetails = async (req, res) => {
   const { orderId } = req.params;
   const { id: userId } = req.user;
 
-  const { data } = await getOrderListDetailsService(orderId, userId);
+  const { data } = await getOrderListDetailsService(+orderId, userId);
   return res.status(StatusCodes.OK).json({ data });
 };
 
