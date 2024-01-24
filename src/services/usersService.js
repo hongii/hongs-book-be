@@ -1,10 +1,8 @@
 const conn = require("../../database/mariadb").promise();
 const { StatusCodes } = require("http-status-codes");
 const { CustomError, ERROR_MESSAGES } = require("../middlewares/errorHandlerMiddleware");
-const jwt = require("jsonwebtoken");
-const crypto = require("crypto");
-require("dotenv").config();
-const privateKey = process.env.PRIVATE_KEY;
+const { encryptPassword } = require("../utils/encryptPassword");
+const { createToken } = require("../utils/createToken");
 
 const RESPONSE_MESSAGES = {
   JOIN_SUCCESS: "회원가입이 완료되었습니다. 로그인을 진행해주세요.",
@@ -21,8 +19,7 @@ const joinService = async (email, password, name, contact) => {
   }
 
   // 비밀번호 암호화
-  const salt = crypto.randomBytes(32).toString("base64");
-  const hashPassword = crypto.pbkdf2Sync(password, salt, 10000, 32, "sha512").toString("base64");
+  const { hashPassword, salt } = encryptPassword(password);
 
   sql = "INSERT INTO users (email, password, name, contact, salt) VALUES (?, ?, ?, ?, ?)";
   const values = [email, hashPassword, name, contact, salt];
@@ -40,21 +37,14 @@ const loginService = async (email, password) => {
 
   if (results.length === 1) {
     const targetUser = results[0];
+
     // db에 저장된 salt값으로 입력받은 비밀번호를 암호화
-    const salt = targetUser.salt;
-    const hashPassword = crypto.pbkdf2Sync(password, salt, 10000, 32, "sha512").toString("base64");
+    const { hashPassword } = encryptPassword(password, targetUser.salt);
 
     // db에 저장되어 있는 암호화된 비밀번호와 일치하는지 확인
     if (targetUser.password === hashPassword) {
-      let accessToken = jwt.sign({ email: targetUser.email, uid: targetUser.id }, privateKey, {
-        expiresIn: process.env.ACCESSTOKEN_LIFETIME,
-        issuer: process.env.ACCESSTOKEN_ISSUER,
-      });
-
-      let refreshToken = jwt.sign({ uid: targetUser.id }, privateKey, {
-        expiresIn: process.env.REFRESHTOKEN_LIFETIME,
-        issuer: process.env.REFRESHTOKEN_ISSUER,
-      });
+      const accessToken = createToken("accessToken", targetUser);
+      const refreshToken = createToken("refreshToken", targetUser);
 
       const sql = "UPDATE users SET refresh_token=? WHERE id=?";
       const values = [refreshToken, targetUser.id];
@@ -103,8 +93,7 @@ const requestPwdResetService = async (email) => {
 
 /* 비밀번호 초기화(새로운 비밀번호로 변경하는 기능) */
 const performPwdResetService = async (email, newPW) => {
-  const salt = crypto.randomBytes(32).toString("base64");
-  const hashPassword = crypto.pbkdf2Sync(newPW, salt, 10000, 32, "sha512").toString("base64");
+  const { hashPassword, salt } = encryptPassword(newPW);
 
   const sql = "UPDATE users SET password=?, salt=? WHERE email=?";
   const values = [hashPassword, salt, email];

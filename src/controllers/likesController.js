@@ -12,7 +12,8 @@ const likeAndUnlikeBook = async (req, res) => {
   const { bookId } = req.params;
   const { id: userId } = req.user;
 
-  const { data, message } = await likeAndUnlikeBookService(bookId, userId);
+  const { data, message } = await likeAndUnlikeBookService(+bookId, userId);
+
   if (message === RESPONSE_MESSAGES.LIKED) {
     return res.status(StatusCodes.CREATED).json({ data, message });
   }
