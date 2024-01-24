@@ -81,7 +81,7 @@ const getBookDetailService = async (bookId, userId) => {
         EXISTS (SELECT 1 FROM likes WHERE user_id = ? AND liked_book_id = ?) AS is_liked 
       FROM books AS b INNER JOIN categories AS c USING (category_id) 
       WHERE b.id = ?`;
-    values = [+userId, bookId, bookId];
+    values = [userId, bookId, bookId];
   }
 
   const [results] = await conn.query(sql, values);
