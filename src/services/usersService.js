@@ -1,10 +1,8 @@
 const conn = require("../../database/mariadb").promise();
 const { StatusCodes } = require("http-status-codes");
 const { CustomError, ERROR_MESSAGES } = require("../middlewares/errorHandlerMiddleware");
-const jwt = require("jsonwebtoken");
 const { encryptPassword } = require("../utils/encryptPassword");
-require("dotenv").config();
-const privateKey = process.env.PRIVATE_KEY;
+const { createToken } = require("../utils/createToken");
 
 const RESPONSE_MESSAGES = {
   JOIN_SUCCESS: "회원가입이 완료되었습니다. 로그인을 진행해주세요.",
@@ -39,20 +37,14 @@ const loginService = async (email, password) => {
 
   if (results.length === 1) {
     const targetUser = results[0];
+
     // db에 저장된 salt값으로 입력받은 비밀번호를 암호화
     const { hashPassword } = encryptPassword(password, targetUser.salt);
 
     // db에 저장되어 있는 암호화된 비밀번호와 일치하는지 확인
     if (targetUser.password === hashPassword) {
-      let accessToken = jwt.sign({ email: targetUser.email, uid: targetUser.id }, privateKey, {
-        expiresIn: process.env.ACCESSTOKEN_LIFETIME,
-        issuer: process.env.ACCESSTOKEN_ISSUER,
-      });
-
-      let refreshToken = jwt.sign({ uid: targetUser.id }, privateKey, {
-        expiresIn: process.env.REFRESHTOKEN_LIFETIME,
-        issuer: process.env.REFRESHTOKEN_ISSUER,
-      });
+      const accessToken = createToken("accessToken", targetUser);
+      const refreshToken = createToken("refreshToken", targetUser);
 
       const sql = "UPDATE users SET refresh_token=? WHERE id=?";
       const values = [refreshToken, targetUser.id];

@@ -161,7 +161,7 @@ const validateJoin = [
   validateRequest,
 ];
 const validateLogin = [validateChainEmail, validateChainPassword, validateRequest];
-const validateRequestResetPW = [validateChainPassword, validateRequest];
+const validateRequestResetPW = [validateChainEmail, validateRequest];
 const validateResetPW = [validateChainEmail, validateChainNewPassword, validateRequest];
 const validateGetBooks = [
   validateChainIsInt("query", "page"),

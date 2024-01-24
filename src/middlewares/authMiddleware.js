@@ -3,6 +3,7 @@ const { CustomError, ERROR_MESSAGES } = require("../middlewares/errorHandlerMidd
 const { StatusCodes } = require("http-status-codes");
 const conn = require("../../database/mariadb").promise();
 const jwt = require("jsonwebtoken");
+const { createToken } = require("../utils/createToken");
 const privateKey = process.env.PRIVATE_KEY;
 
 const authenticateToken = async (req, res, next) => {
@@ -55,15 +56,8 @@ const refreshAccessToken = async (req, res, next) => {
     jwt.verify(refreshToken, privateKey);
 
     const targetUser = results[0];
-    let newAccessToken = jwt.sign({ email: targetUser.email, uid: targetUser.id }, privateKey, {
-      expiresIn: process.env.ACCESSTOKEN_LIFETIME,
-      issuer: process.env.ACCESSTOKEN_ISSUER,
-    });
-
-    let newRefreshToken = jwt.sign({ uid: targetUser.id }, privateKey, {
-      expiresIn: process.env.REFRESHTOKEN_LIFETIME,
-      issuer: process.env.REFRESHTOKEN_ISSUER,
-    });
+    const newAccessToken = createToken("accessToken", targetUser);
+    const newRefreshToken = createToken("refreshToken", targetUser);
 
     sql = "UPDATE users SET refresh_token=? WHERE id=?";
     values = [newRefreshToken, targetUser.id];
