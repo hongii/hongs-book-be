@@ -48,7 +48,6 @@ const getBooksInfoService = async (categoryId, isNew, page, limit) => {
   }
 
   const [results] = await conn.query(sql, values);
-  console.log(results);
   if (results.length > 0) {
     const totalBooks = results[0].total_books;
     let books = Object.entries(results)

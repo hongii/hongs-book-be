@@ -29,7 +29,7 @@ const removeFromCart = async (req, res) => {
   const { id: userId } = req.user;
   const { bookId } = req.params;
 
-  await removeFromCartService(bookId, userId);
+  await removeFromCartService(+bookId, userId);
   return res.status(StatusCodes.NO_CONTENT).json();
 };
 
