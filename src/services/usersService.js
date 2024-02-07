@@ -3,6 +3,7 @@ const { StatusCodes } = require("http-status-codes");
 const { CustomError, ERROR_MESSAGES } = require("../middlewares/errorHandlerMiddleware");
 const { encryptPassword } = require("../utils/encryptPassword");
 const { createToken } = require("../utils/createToken");
+const { resetRefreshToken } = require("./authService");
 
 const RESPONSE_MESSAGES = {
   JOIN_SUCCESS: "회원가입이 완료되었습니다. 로그인을 진행해주세요.",
@@ -68,11 +69,10 @@ const loginService = async (email, password) => {
   throw new CustomError(ERROR_MESSAGES.LOGIN_BAD_REQUEST, StatusCodes.BAD_REQUEST);
 };
 
+/* 로그아웃 */
 const logoutService = async (userId) => {
-  const sql = `UPDATE users SET refresh_token=? WHERE id=?`;
-  const values = ["", userId];
-  const [results] = await conn.query(sql, values);
-  if (results.affectedRows === 1) {
+  const resetRefreshToken = await resetRefreshToken();
+  if (resetRefreshToken) {
     return { message: RESPONSE_MESSAGES.LOGOUT_SUCCESS };
   }
 
