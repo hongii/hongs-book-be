@@ -71,8 +71,8 @@ const loginService = async (email, password) => {
 
 /* 로그아웃 */
 const logoutService = async (userId) => {
-  const resetRefreshToken = await resetRefreshToken();
-  if (resetRefreshToken) {
+  const isResetRefreshToken = await resetRefreshToken(userId);
+  if (isResetRefreshToken) {
     return { message: RESPONSE_MESSAGES.LOGOUT_SUCCESS };
   }
 
