@@ -1,9 +1,8 @@
 const { asyncWrapper } = require("../middlewares/asyncWrapperMiddleware");
 const { CustomError, ERROR_MESSAGES } = require("../middlewares/errorHandlerMiddleware");
 const { StatusCodes } = require("http-status-codes");
-const conn = require("../../database/mariadb").promise();
+const { refreshAccessTokenService } = require("../services/authService");
 const jwt = require("jsonwebtoken");
-const { createToken } = require("../utils/createToken");
 const privateKey = process.env.PRIVATE_KEY;
 
 const authenticateToken = async (req, res, next) => {
@@ -49,35 +48,19 @@ const refreshAccessToken = async (req, res, next) => {
   }
 
   const { id: userId } = req.user;
-  let sql = "SELECT * FROM users WHERE id=? AND refresh_token=?";
-  let values = [+userId, refreshToken];
-  let [results] = await conn.query(sql, values);
-  if (results.length > 0) {
-    jwt.verify(refreshToken, privateKey);
+  const { newAccessToken, newRefreshToken } = await refreshAccessTokenService(userId, refreshToken);
 
-    const targetUser = results[0];
-    const newAccessToken = createToken("accessToken", targetUser);
-    const newRefreshToken = createToken("refreshToken", targetUser);
+  res.cookie("refresh_token", newRefreshToken, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "strict",
+    path: "/",
+    maxAge: 1000 * 60 * 60 * 24 * 14, // 14일
+  });
 
-    sql = "UPDATE users SET refresh_token=? WHERE id=?";
-    values = [newRefreshToken, targetUser.id];
-    [results] = await conn.query(sql, values);
-
-    if (results.affectedRows === 1) {
-      res.cookie("refresh_token", newRefreshToken, {
-        httpOnly: true,
-        secure: true,
-        sameSite: "strict",
-        path: "/",
-        maxAge: 1000 * 60 * 60 * 24 * 14, // 14일
-      });
-
-      res.header("Authorization", `Bearer ${newAccessToken}`);
-      console.log("Access token refreshed.");
-      return next();
-    }
-  }
-  throw new CustomError(ERROR_MESSAGES.REFRESH_TOKEN_MISMATCH, StatusCodes.UNAUTHORIZED);
+  res.header("Authorization", `Bearer ${newAccessToken}`);
+  console.log("Access token refreshed.");
+  return next();
 };
 
 module.exports = {

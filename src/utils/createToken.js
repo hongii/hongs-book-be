@@ -9,11 +9,11 @@ const createToken = (type, user) => {
     refreshToken: { uid },
   };
   const tokenConfig = {
-    accessTokenConfig: {
+    accessToken: {
       expiresIn: process.env.ACCESSTOKEN_LIFETIME,
       issuer: process.env.ACCESSTOKEN_ISSUER,
     },
-    refreshTokenConfig: {
+    refreshToken: {
       expiresIn: process.env.REFRESHTOKEN_LIFETIME,
       issuer: process.env.REFRESHTOKEN_ISSUER,
     },
