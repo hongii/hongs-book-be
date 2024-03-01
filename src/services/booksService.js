@@ -5,7 +5,7 @@ const { CustomError, ERROR_MESSAGES } = require("../middlewares/errorHandlerMidd
 
 const RESPONSE_MESSAGES = {
   NO_BOOKS: "조회 가능한 도서가 없습니다.",
-  NO_RECENTLY_PUBLISHED_BOOKS: "지난 30일 이내에 출간된 새로운 도서가 없습니다.",
+  NO_RECENTLY_PUBLISHED_BOOKS: "최신 도서가 없습니다.",
 };
 
 const getBooksInfoService = async (categoryId, isNew, page, limit) => {
@@ -62,7 +62,10 @@ const getBooksInfoService = async (categoryId, isNew, page, limit) => {
     throw new CustomError(ERROR_MESSAGES.BAD_REQUEST, StatusCodes.BAD_REQUEST);
   }
 
-  return { data: {}, message };
+  return {
+    data: { books: [], pagination: { totalBooks: 0, page: 1 } },
+    message,
+  };
 };
 
 const getBookDetailService = async (bookId, userId) => {

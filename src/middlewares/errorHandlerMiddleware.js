@@ -14,27 +14,28 @@ const ERROR_MESSAGES = {
   DUPLICATE_EMAIL: "이미 가입된 이메일입니다. 다른 이메일을 입력해주세요.",
   LOGIN_UNAUTHORIZED: "로그인 도중에 문제가 생겼습니다. 로그인을 다시 시도해주세요.",
   LOGIN_BAD_REQUEST: "이메일 또는 비밀번호를 잘못 입력했습니다. 입력하신 내용을 다시 확인해주세요.",
-  EMAIL_NOT_FOUND: "존재하지 않는 이메일입니다. 가입한 이메일 정보를 정확히 입력해주세요.",
+  EMAIL_NOT_FOUND: "존재하지 않는 이메일입니다. 가입한 이메일을 정확히 입력해주세요.",
   ORDER_ERROR: "결제 진행 중 오류가 발생했습니다.",
   CART_DATA_MISMATCH: "결제 진행 중 오류가 발생했습니다. (장바구니 정보와 일치하지 않습니다.)",
 };
 
 class CustomError extends Error {
-  constructor(errorMessages, statusCode, multiErrMsg = false) {
-    const message = Array.isArray(errorMessages) ? errorMessages.join(", ") : String(errorMessages);
+  constructor(errorMessages, statusCode, isObject = false) {
+    // const message = Array.isArray(errorMessages) ? errorMessages.join(", ") : String(errorMessages);
 
-    super(message || getReasonPhrase(statusCode));
+    super();
     this.name = "CustomError";
     this.statusCode = statusCode || StatusCodes.INTERNAL_SERVER_ERROR;
-    this.multiErrMsg = multiErrMsg;
+    this.isObject = isObject;
+    this.message = errorMessages;
   }
 }
 
 const handleCustomError = (err, res) => {
-  if (err.multiErrMsg) {
-    const errMsgArr = err.message.split(", ");
-    return res.status(err.statusCode).json({ message: errMsgArr });
-  }
+  // if (err.isObject) {
+  //   const errMsgArr = err.message.split(", ");
+  //   return res.status(err.statusCode).json({ message: errMsgArr });
+  // }
   return res.status(err.statusCode).json({ message: err.message });
 };
 

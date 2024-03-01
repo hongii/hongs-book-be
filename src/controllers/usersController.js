@@ -33,7 +33,7 @@ const login = async (req, res) => {
 
   res.header("Authorization", `Bearer ${accessToken}`);
 
-  return res.status(StatusCodes.OK).json({ data });
+  return res.status(StatusCodes.OK).json({ ...data });
 };
 
 /* 로그아웃 */
@@ -57,7 +57,7 @@ const requestPwdReset = async (req, res) => {
   const { email } = req.body;
 
   const { data } = await requestPwdResetService(email);
-  return res.status(StatusCodes.OK).json({ data });
+  return res.status(StatusCodes.OK).json({ ...data });
 };
 
 /* 비밀번호 초기화(새로운 비밀번호로 변경하는 기능) */

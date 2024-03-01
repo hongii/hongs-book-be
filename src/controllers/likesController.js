@@ -17,7 +17,7 @@ const likeAndUnlikeBook = async (req, res) => {
   if (message === RESPONSE_MESSAGES.LIKED) {
     return res.status(StatusCodes.CREATED).json({ data, message });
   }
-  return res.status(StatusCodes.OK).json({ data, message });
+  return res.status(StatusCodes.OK).json({ ...data, message });
 };
 
 module.exports = { likeAndUnlikeBook: asyncWrapper(likeAndUnlikeBook) };

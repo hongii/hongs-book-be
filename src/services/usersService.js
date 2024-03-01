@@ -8,7 +8,7 @@ const { resetRefreshToken } = require("./authService");
 const RESPONSE_MESSAGES = {
   JOIN_SUCCESS: "회원가입이 완료되었습니다. 로그인을 진행해주세요.",
   LOGOUT_SUCCESS: "로그아웃 되었습니다.",
-  RESET_PASSWORD: "비밀번호가 변경되었습니다.",
+  RESET_PASSWORD: "비밀번호가 변경되었습니다. 로그인을 진행해주세요.",
 };
 
 const joinService = async (email, password, name, contact) => {

@@ -27,7 +27,7 @@ const getOrderList = async (req, res) => {
   const { id: userId } = req.user;
 
   const { data, message } = await getOrderListService(userId);
-  return res.status(StatusCodes.OK).json({ data, message });
+  return res.status(StatusCodes.OK).json({ ...data, message });
 };
 
 /* 주문 내역의 상품 상세 조회 */
@@ -36,7 +36,7 @@ const getOrderListDetails = async (req, res) => {
   const { id: userId } = req.user;
 
   const { data } = await getOrderListDetailsService(+orderId, userId);
-  return res.status(StatusCodes.OK).json({ data });
+  return res.status(StatusCodes.OK).json({ ...data });
 };
 
 module.exports = {

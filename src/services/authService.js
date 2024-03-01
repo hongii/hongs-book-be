@@ -39,7 +39,7 @@ const refreshAccessTokenService = async (userId, refreshToken) => {
 /* DB에 저장된 해당 사용자의 Refresh Token 초기화 */
 const resetRefreshToken = async (userId) => {
   const sql = `UPDATE users SET refresh_token=? WHERE id=?`;
-  const values = ["", userId];
+  const values = [null, userId];
   const [results] = await conn.query(sql, values);
   return results.affectedRows === 1 ? true : false;
 };
