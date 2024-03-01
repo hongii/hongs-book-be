@@ -1,4 +1,4 @@
-const { StatusCodes, getReasonPhrase } = require("http-status-codes");
+const { StatusCodes } = require("http-status-codes");
 const { TokenExpiredError, JsonWebTokenError } = require("jsonwebtoken");
 
 const ERROR_MESSAGES = {
@@ -20,23 +20,29 @@ const ERROR_MESSAGES = {
 };
 
 class CustomError extends Error {
-  constructor(errorMessages, statusCode, isObject = false) {
-    // const message = Array.isArray(errorMessages) ? errorMessages.join(", ") : String(errorMessages);
-
+  constructor(errorMessages) {
     super();
     this.name = "CustomError";
-    this.statusCode = statusCode || StatusCodes.INTERNAL_SERVER_ERROR;
-    this.isObject = isObject;
     this.message = errorMessages;
   }
 }
 
 const handleCustomError = (err, res) => {
-  // if (err.isObject) {
-  //   const errMsgArr = err.message.split(", ");
-  //   return res.status(err.statusCode).json({ message: errMsgArr });
-  // }
-  return res.status(err.statusCode).json({ message: err.message });
+  switch (err.message) {
+    case ERROR_MESSAGES.REFRESH_TOKEN_MISMATCH:
+    case ERROR_MESSAGES.REFRESH_TOKEN_RESET_FAILED:
+    case ERROR_MESSAGES.LOGIN_UNAUTHORIZED:
+    case ERROR_MESSAGES.LOGIN_REQUIRED:
+    case ERROR_MESSAGES.TOKEN_EXPIRED:
+      return res.status(StatusCodes.UNAUTHORIZED).json({ message: err.message });
+
+    case ERROR_MESSAGES.EMAIL_NOT_FOUND:
+    case ERROR_MESSAGES.BOOKS_NOT_FOUND:
+      return res.status(StatusCodes.NOT_FOUND).json({ message: err.message });
+
+    default:
+      return res.status(StatusCodes.BAD_REQUEST).json({ message: err.message });
+  }
 };
 
 const handleTokenExpiredError = (res) => {
@@ -55,7 +61,7 @@ const handleSQLError = (res) => {
 };
 
 const handleServerError = (res) => {
-  return res.status(StatusCodes.BAD_REQUEST).json({
+  return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
     message: ERROR_MESSAGES.SERVER_ERROR,
   });
 };

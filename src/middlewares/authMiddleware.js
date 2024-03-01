@@ -1,6 +1,5 @@
 const { asyncWrapper } = require("../middlewares/asyncWrapperMiddleware");
 const { CustomError, ERROR_MESSAGES } = require("../middlewares/errorHandlerMiddleware");
-const { StatusCodes } = require("http-status-codes");
 const { refreshAccessTokenService } = require("../services/authService");
 const jwt = require("jsonwebtoken");
 const privateKey = process.env.PRIVATE_KEY;
@@ -12,7 +11,7 @@ const authenticateToken = async (req, res, next) => {
     if (endPoint === "/api/books") {
       return next();
     } else {
-      throw new CustomError(ERROR_MESSAGES.LOGIN_REQUIRED, StatusCodes.UNAUTHORIZED);
+      throw new CustomError(ERROR_MESSAGES.LOGIN_REQUIRED);
     }
   }
 
@@ -44,7 +43,7 @@ const refreshAccessToken = async (req, res, next) => {
 
   const { refresh_token: refreshToken } = req.cookies;
   if (!refreshToken) {
-    throw new CustomError(ERROR_MESSAGES.TOKEN_EXPIRED, StatusCodes.UNAUTHORIZED);
+    throw new CustomError(ERROR_MESSAGES.TOKEN_EXPIRED);
   }
 
   const { id: userId } = req.user;

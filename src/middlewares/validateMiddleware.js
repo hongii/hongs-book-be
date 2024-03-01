@@ -16,7 +16,7 @@ const validateRequest = (req, res, next) => {
     return acc;
   }, {});
   console.log(errMsg);
-  return next(new CustomError(errMsg, StatusCodes.BAD_REQUEST, true));
+  return next(new CustomError(errMsg));
 };
 
 /* 유효성 검사 체이닝 */

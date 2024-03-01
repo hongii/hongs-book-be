@@ -13,6 +13,6 @@ router.use(authenticateToken, refreshAccessToken);
 
 router.post("/", validateGetAddToCart, addTocart);
 router.get("/", validateGetCartItems, getCartItems);
-router.delete("/:bookId", validateRemoveFromCart, removeFromCart);
+router.delete("/books/:bookId", validateRemoveFromCart, removeFromCart);
 
 module.exports = router;

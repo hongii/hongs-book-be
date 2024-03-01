@@ -1,5 +1,4 @@
 const conn = require("../../database/mariadb").promise();
-const { StatusCodes } = require("http-status-codes");
 const { CustomError, ERROR_MESSAGES } = require("../middlewares/errorHandlerMiddleware");
 const { encryptPassword } = require("../utils/encryptPassword");
 const { createToken } = require("../utils/createToken");
@@ -16,7 +15,7 @@ const joinService = async (email, password, name, contact) => {
   let sql = `SELECT * FROM users WHERE email = ?`;
   let [results] = await conn.query(sql, [email]);
   if (results.length > 0) {
-    throw new CustomError(ERROR_MESSAGES.DUPLICATE_EMAIL, StatusCodes.BAD_REQUEST);
+    throw new CustomError(ERROR_MESSAGES.DUPLICATE_EMAIL);
   }
 
   // 비밀번호 암호화
@@ -28,7 +27,7 @@ const joinService = async (email, password, name, contact) => {
   if (results.affectedRows === 1) {
     return { message: RESPONSE_MESSAGES.JOIN_SUCCESS };
   }
-  throw new CustomError(ERROR_MESSAGES.BAD_REQUEST, StatusCodes.BAD_REQUEST);
+  throw new CustomError(ERROR_MESSAGES.BAD_REQUEST);
 };
 
 /* 로그인 */
@@ -62,11 +61,11 @@ const loginService = async (email, password) => {
           refreshToken,
         };
       }
-      throw new CustomError(ERROR_MESSAGES.LOGIN_UNAUTHORIZED, StatusCodes.UNAUTHORIZED);
+      throw new CustomError(ERROR_MESSAGES.LOGIN_UNAUTHORIZED);
     }
   }
 
-  throw new CustomError(ERROR_MESSAGES.LOGIN_BAD_REQUEST, StatusCodes.BAD_REQUEST);
+  throw new CustomError(ERROR_MESSAGES.LOGIN_BAD_REQUEST);
 };
 
 /* 로그아웃 */
@@ -76,7 +75,7 @@ const logoutService = async (userId) => {
     return { message: RESPONSE_MESSAGES.LOGOUT_SUCCESS };
   }
 
-  throw new CustomError(ERROR_MESSAGES.BAD_REQUEST, StatusCodes.BAD_REQUEST);
+  throw new CustomError(ERROR_MESSAGES.BAD_REQUEST);
 };
 
 /* 비밀번호 초기화 요청(로그인 하기 전, 비밀번호 찾기 기능) */
@@ -88,7 +87,7 @@ const requestPwdResetService = async (email) => {
     return { data: { email: targetUser.email } };
   }
 
-  throw new CustomError(ERROR_MESSAGES.EMAIL_NOT_FOUND, StatusCodes.NOT_FOUND);
+  throw new CustomError(ERROR_MESSAGES.EMAIL_NOT_FOUND);
 };
 
 /* 비밀번호 초기화(새로운 비밀번호로 변경하는 기능) */
@@ -102,7 +101,7 @@ const performPwdResetService = async (email, newPW) => {
     return { message: RESPONSE_MESSAGES.RESET_PASSWORD };
   }
 
-  throw new CustomError(ERROR_MESSAGES.BAD_REQUEST, StatusCodes.BAD_REQUEST);
+  throw new CustomError(ERROR_MESSAGES.BAD_REQUEST);
 };
 
 module.exports = {

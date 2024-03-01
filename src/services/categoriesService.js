@@ -12,7 +12,7 @@ const getAllCategoriesService = async () => {
     const categories = snakeToCamelData(results);
     return { data: { categories }, message: null };
   }
-  return { data: {}, message: RESPONSE_MESSAGES.EMPTY_CATEGORY_LIST };
+  return { data: { categories: [] }, message: RESPONSE_MESSAGES.EMPTY_CATEGORY_LIST };
 };
 
 module.exports = { getAllCategoriesService };

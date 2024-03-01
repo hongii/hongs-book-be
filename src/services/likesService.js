@@ -1,5 +1,4 @@
 const conn = require("../../database/mariadb").promise();
-const { StatusCodes } = require("http-status-codes");
 const { CustomError } = require("../middlewares/errorHandlerMiddleware");
 
 const RESPONSE_MESSAGES = {
@@ -32,7 +31,7 @@ const likeAndUnlikeBookService = async (bookId, userId) => {
       return { data: { likes }, message: RESPONSE_MESSAGES.LIKED };
     }
   }
-  throw new CustomError(ERROR_MESSAGES.BAD_REQUEST, StatusCodes.BAD_REQUEST);
+  throw new CustomError(ERROR_MESSAGES.BAD_REQUEST);
 };
 
 module.exports = { likeAndUnlikeBookService };

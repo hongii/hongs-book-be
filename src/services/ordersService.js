@@ -1,5 +1,4 @@
 const conn = require("../../database/mariadb").promise();
-const { StatusCodes } = require("http-status-codes");
 const { snakeToCamelData } = require("../utils/convertSnakeToCamel");
 const { CustomError, ERROR_MESSAGES } = require("../middlewares/errorHandlerMiddleware");
 
@@ -13,7 +12,7 @@ const checkDataMatch = async (conn, items, itemIds, userId, totalQuantity) => {
   const values = [userId, itemIds];
   const [checkResults] = await conn.query(sql, values);
   if (checkResults.length !== itemIds.length) {
-    throw new CustomError(ERROR_MESSAGES.CART_DATA_MISMATCH, StatusCodes.BAD_REQUEST);
+    throw new CustomError(ERROR_MESSAGES.CART_DATA_MISMATCH);
   }
 
   const requestItems = [...items].sort((obj1, obj2) => obj1.cartItemId - obj2.cartItemId);
@@ -25,13 +24,13 @@ const checkDataMatch = async (conn, items, itemIds, userId, totalQuantity) => {
       checkResults[i].book_id !== bookId ||
       checkResults[i].quantity !== quantity
     ) {
-      throw new CustomError(ERROR_MESSAGES.CART_DATA_MISMATCH, StatusCodes.BAD_REQUEST);
+      throw new CustomError(ERROR_MESSAGES.CART_DATA_MISMATCH);
     }
   }
 
   const checkTotalQuantity = checkResults.reduce((acc, obj) => acc + obj.quantity, 0);
   if (checkTotalQuantity !== totalQuantity) {
-    throw new CustomError(ERROR_MESSAGES.CART_DATA_MISMATCH, StatusCodes.BAD_REQUEST);
+    throw new CustomError(ERROR_MESSAGES.CART_DATA_MISMATCH);
   }
 };
 
@@ -69,7 +68,7 @@ const requestPaymentService = async (
     sql = "DELETE FROM cart_items WHERE id IN(?)";
     const [deleteResults] = await conn.query(sql, [itemIds]);
     if (deleteResults.affectedRows !== items.length) {
-      throw new CustomError(ERROR_MESSAGES.ORDER_ERROR, StatusCodes.BAD_REQUEST);
+      throw new CustomError(ERROR_MESSAGES.ORDER_ERROR);
     }
 
     await conn.commit();
@@ -77,7 +76,7 @@ const requestPaymentService = async (
     return { message: RESPONSE_MESSAGES.ORDER_SUCCESS };
   } catch (err) {
     await conn.rollback();
-    throw new CustomError(err.message, StatusCodes.BAD_REQUEST);
+    throw new CustomError(err.message);
   }
 };
 
@@ -123,7 +122,7 @@ const getOrderListDetailsService = async (orderId, userId) => {
       return { data: { orderDetail } };
     }
   }
-  throw new CustomError(ERROR_MESSAGES.BAD_REQUEST, StatusCodes.BAD_REQUEST);
+  throw new CustomError(ERROR_MESSAGES.BAD_REQUEST);
 };
 
 module.exports = { requestPaymentService, getOrderListService, getOrderListDetailsService };

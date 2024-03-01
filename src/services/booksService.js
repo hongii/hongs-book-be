@@ -1,5 +1,4 @@
 const conn = require("../../database/mariadb").promise();
-const { StatusCodes } = require("http-status-codes");
 const { snakeToCamelData } = require("../utils/convertSnakeToCamel");
 const { CustomError, ERROR_MESSAGES } = require("../middlewares/errorHandlerMiddleware");
 
@@ -27,7 +26,7 @@ const getBooksInfoService = async (categoryId, isNew, page, limit) => {
     const preSql = `SELECT * FROM categories WHERE category_id=?`;
     const [preResults] = await conn.query(preSql, [categoryId]);
     if (preResults.length === 0) {
-      throw new CustomError(ERROR_MESSAGES.BAD_REQUEST, StatusCodes.BAD_REQUEST);
+      throw new CustomError(ERROR_MESSAGES.BAD_REQUEST);
     }
     categoryName = preResults[0].category_name;
     values = [categoryId, ...values];
@@ -59,7 +58,7 @@ const getBooksInfoService = async (categoryId, isNew, page, limit) => {
 
   if (page > 1) {
     // 조회 가능한 페이지 번호가 아닌 경우
-    throw new CustomError(ERROR_MESSAGES.BAD_REQUEST, StatusCodes.BAD_REQUEST);
+    throw new CustomError(ERROR_MESSAGES.BAD_REQUEST);
   }
 
   return {
@@ -95,7 +94,7 @@ const getBookDetailService = async (bookId, userId) => {
     data = snakeToCamelData(data);
     return { data };
   }
-  throw new CustomError(ERROR_MESSAGES.BOOKS_NOT_FOUND, StatusCodes.NOT_FOUND);
+  throw new CustomError(ERROR_MESSAGES.BOOKS_NOT_FOUND);
 };
 
 module.exports = { getBooksInfoService, getBookDetailService };

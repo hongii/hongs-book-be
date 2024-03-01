@@ -1,5 +1,4 @@
 const conn = require("../../database/mariadb").promise();
-const { StatusCodes } = require("http-status-codes");
 const { CustomError, ERROR_MESSAGES } = require("../middlewares/errorHandlerMiddleware");
 const { createToken } = require("../utils/createToken");
 const jwt = require("jsonwebtoken");
@@ -30,10 +29,10 @@ const refreshAccessTokenService = async (userId, refreshToken) => {
   const isResetRefreshToken = await resetRefreshToken(userId);
   if (isResetRefreshToken) {
     // db에 저장된 Refresh Token을 초기화 성공한 경우
-    throw new CustomError(ERROR_MESSAGES.REFRESH_TOKEN_MISMATCH, StatusCodes.UNAUTHORIZED);
+    throw new CustomError(ERROR_MESSAGES.REFRESH_TOKEN_MISMATCH);
   }
   // db에 저장된 Refresh Token 초기화 실패한 경우
-  throw new CustomError(ERROR_MESSAGES.REFRESH_TOKEN_RESET_FAILED, StatusCodes.UNAUTHORIZED);
+  throw new CustomError(ERROR_MESSAGES.REFRESH_TOKEN_RESET_FAILED);
 };
 
 /* DB에 저장된 해당 사용자의 Refresh Token 초기화 */

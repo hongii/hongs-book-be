@@ -1,5 +1,4 @@
 const conn = require("../../database/mariadb").promise();
-const { StatusCodes } = require("http-status-codes");
 const { snakeToCamelData } = require("../utils/convertSnakeToCamel");
 const { CustomError, ERROR_MESSAGES } = require("../middlewares/errorHandlerMiddleware");
 
@@ -32,10 +31,10 @@ const addTocartService = async (bookId, quantity, userId) => {
     if (results.affectedRows > 0) {
       return { message: RESPONSE_MESSAGES.ADD_TO_CART };
     }
-    throw new CustomError(ERROR_MESSAGES.BAD_REQUEST, StatusCodes.BAD_REQUEST);
+    throw new CustomError(ERROR_MESSAGES.BAD_REQUEST);
   }
 
-  throw new CustomError(ERROR_MESSAGES.BOOKS_NOT_FOUND, StatusCodes.NOT_FOUND);
+  throw new CustomError(ERROR_MESSAGES.BOOKS_NOT_FOUND);
 };
 
 const getCartItemsService = async (cartItemIds, userId) => {
@@ -55,7 +54,7 @@ const getCartItemsService = async (cartItemIds, userId) => {
       const items = snakeToCamelData(selectedItemsResults);
       return { data: { items }, message: null };
     }
-    throw new CustomError(ERROR_MESSAGES.BAD_REQUEST, StatusCodes.BAD_REQUEST);
+    throw new CustomError(ERROR_MESSAGES.BAD_REQUEST);
   }
 
   const [results] = await conn.query(sql, values);
@@ -73,7 +72,7 @@ const removeFromCartService = async (bookId, userId) => {
   if (results.affectedRows > 0) {
     return null;
   }
-  throw new CustomError(ERROR_MESSAGES.BAD_REQUEST, StatusCodes.BAD_REQUEST);
+  throw new CustomError(ERROR_MESSAGES.BAD_REQUEST);
 };
 
 module.exports = {
