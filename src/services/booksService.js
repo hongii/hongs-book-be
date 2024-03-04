@@ -89,7 +89,6 @@ const getBookDetailService = async (bookId, userId) => {
   }
 
   const [results] = await conn.query(sql, values);
-  console.log(results);
   if (results.length > 0) {
     // let data = Object.fromEntries(Object.entries(results[0]));
     data = snakeToCamelData(results[0]);

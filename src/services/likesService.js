@@ -2,8 +2,8 @@ const conn = require("../../database/mariadb").promise();
 const { CustomError } = require("../middlewares/errorHandlerMiddleware");
 
 const RESPONSE_MESSAGES = {
-  LIKED: "좋아요 추가!",
-  UNLIKED: "좋아요 취소!",
+  LIKED: "liked",
+  UNLIKED: "unliked",
 };
 
 const likeAndUnlikeBookService = async (bookId, userId) => {

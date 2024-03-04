@@ -46,20 +46,34 @@ const refreshAccessToken = async (req, res, next) => {
     throw new CustomError(ERROR_MESSAGES.TOKEN_EXPIRED);
   }
 
-  const { id: userId } = req.user;
-  const { newAccessToken, newRefreshToken } = await refreshAccessTokenService(userId, refreshToken);
+  try {
+    const { id: userId } = req.user;
+    const { newAccessToken, newRefreshToken } = await refreshAccessTokenService(
+      userId,
+      refreshToken,
+    );
 
-  res.cookie("refresh_token", newRefreshToken, {
-    httpOnly: true,
-    secure: true,
-    sameSite: "strict",
-    path: "/",
-    maxAge: 1000 * 60 * 60 * 24 * 14, // 14일
-  });
+    res.cookie("refresh_token", newRefreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict",
+      path: "/",
+      maxAge: 1000 * 60 * 60 * 24 * 14, // 14일
+    });
 
-  res.header("Authorization", `Bearer ${newAccessToken}`);
-  console.log("Access token refreshed.");
-  return next();
+    res.header("Authorization", `Bearer ${newAccessToken}`);
+    console.log("Access token refreshed.");
+    return next();
+  } catch (err) {
+    res.cookie("refresh_token", "", {
+      httpOnly: true,
+      secure: true,
+      sameSite: "Strict",
+      path: "/",
+      maxAge: 0,
+    });
+    return next(err);
+  }
 };
 
 module.exports = {

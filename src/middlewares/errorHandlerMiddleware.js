@@ -8,7 +8,7 @@ const ERROR_MESSAGES = {
   TOKEN_EXPIRED: "로그인(인증) 토큰이 만료되었습니다. 다시 로그인 후 사용해주세요.",
   INVALID_TOKEN: "유효하지 않은 토큰입니다.",
   LOGIN_REQUIRED: "로그인이 필요합니다. 로그인 후 이용해주세요.",
-  REFRESH_TOKEN_MISMATCH: "refresh token정보가 일치하지 않습니다. 다시 로그인 후 사용해주세요.",
+  REFRESH_TOKEN_MISMATCH: "문제가 발생했습니다. 다시 로그인 후 사용해주세요.",
   REFRESH_TOKEN_RESET_FAILED: "Refresh Token 초기화에 실패했습니다. 다시 로그인 후 사용해주세요.",
   BOOKS_NOT_FOUND: "존재하지 않는 도서입니다.",
   DUPLICATE_EMAIL: "이미 가입된 이메일입니다. 다른 이메일을 입력해주세요.",
