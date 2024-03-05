@@ -5,7 +5,7 @@ const jwt = require("jsonwebtoken");
 const privateKey = process.env.PRIVATE_KEY;
 
 const authenticateToken = async (req, res, next) => {
-  const endPoint = req.originalUrl.slice(0, req.originalUrl.length - 2);
+  const endPoint = req.originalUrl.split("/").slice(0, 3).join("/");
   const accessToken = req.headers.authorization?.split(" ")[1];
   if (!accessToken) {
     if (endPoint === "/api/books") {
