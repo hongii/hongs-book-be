@@ -65,9 +65,9 @@ const getCartItemsService = async (cartItemIds, userId) => {
   return { data: {}, message: RESPONSE_MESSAGES.EMPTY_CART };
 };
 
-const removeFromCartService = async (bookId, userId) => {
-  const sql = `DELETE FROM cart_items WHERE user_id=? AND book_id=?`;
-  const values = [+userId, +bookId];
+const removeFromCartService = async (cartItemId, userId) => {
+  const sql = `DELETE FROM cart_items WHERE user_id=? AND id=?`;
+  const values = [+userId, +cartItemId];
   const [results] = await conn.query(sql, values);
   if (results.affectedRows > 0) {
     return null;

@@ -21,15 +21,15 @@ const getCartItems = async (req, res) => {
   const { id: userId } = req.user;
 
   const { data, message } = await getCartItemsService(cartItemIds, userId);
-  return res.status(StatusCodes.OK).json({ data, message });
+  return res.status(StatusCodes.OK).json({ ...data, message });
 };
 
 /* 장바구니에서 물품 제거 */
 const removeFromCart = async (req, res) => {
   const { id: userId } = req.user;
-  const { bookId } = req.params;
+  const { cartItemId } = req.params;
 
-  await removeFromCartService(+bookId, userId);
+  await removeFromCartService(+cartItemId, userId);
   return res.status(StatusCodes.NO_CONTENT).json();
 };
 

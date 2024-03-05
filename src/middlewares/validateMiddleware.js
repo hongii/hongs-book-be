@@ -172,6 +172,7 @@ const validateGetBooks = [
   validateRequest,
 ];
 const validateParamBookId = [validateChainIsInt("params", "bookId"), validateRequest];
+const validateParamCartItemId = [validateChainIsInt("params", "cartItemId"), validateRequest];
 const validateGetAddToCart = [
   validateChainIsInt("body", "bookId"),
   validateChainIsInt("body", "quantity"),
@@ -198,7 +199,7 @@ module.exports = {
   validateLikeAndUnlikeBook: validateParamBookId,
   validateGetAddToCart,
   validateGetCartItems,
-  validateRemoveFromCart: validateParamBookId,
+  validateRemoveFromCart: validateParamCartItemId,
   validateRequestPayment,
   validateGetOrderListDetails: validateGetOrderListDetails,
 };
