@@ -113,7 +113,7 @@ const getOrderListDetailsService = async (orderId, userId) => {
   const values = [orderId, userId];
   const [results] = await conn.query(sql, values);
   if (results.length > 0) {
-    sql = `SELECT o.book_id, b.title, b.author, b.price, o.quantity 
+    sql = `SELECT o.book_id, b.title, b.author, b.price, b.img_url, b.form, o.quantity 
             FROM ordered_books AS o INNER JOIN books AS b ON o.book_id=b.id 
             WHERE order_id =?`;
     const [results] = await conn.query(sql, orderId);

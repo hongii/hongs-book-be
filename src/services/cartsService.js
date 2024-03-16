@@ -29,7 +29,10 @@ const addTocartService = async (bookId, quantity, userId) => {
     values = [setQuantity, userId, bookId];
     [results] = await conn.query(sql, values);
     if (results.affectedRows > 0) {
-      return { message: RESPONSE_MESSAGES.ADD_TO_CART };
+      sql = "SELECT count(*) as cnt FROM cart_items WHERE user_id=?";
+      values = [userId];
+      [results] = await conn.query(sql, values);
+      return { data: { cartItemsCount: results[0].cnt }, message: RESPONSE_MESSAGES.ADD_TO_CART };
     }
     throw new CustomError(ERROR_MESSAGES.BAD_REQUEST);
   }
@@ -39,7 +42,7 @@ const addTocartService = async (bookId, quantity, userId) => {
 
 const getCartItemsService = async (cartItemIds, userId) => {
   // 장바구니 전체 목록 조회
-  const sql = `SELECT c.id AS cart_item_id, c.book_id, b.title, b.summary, b.price, c.quantity 
+  const sql = `SELECT c.id AS cart_item_id, c.book_id, b.title, b.summary, b.price, b.img_url, c.quantity 
               FROM cart_items AS c INNER JOIN books AS b ON c.book_id = b.id 
               WHERE c.user_id=?`;
   const tailSql = " AND c.id IN (?)";
@@ -62,7 +65,7 @@ const getCartItemsService = async (cartItemIds, userId) => {
     const items = snakeToCamelData(results);
     return { data: { items }, message: null };
   }
-  return { data: {}, message: RESPONSE_MESSAGES.EMPTY_CART };
+  return { data: { items: [] }, message: RESPONSE_MESSAGES.EMPTY_CART };
 };
 
 const removeFromCartService = async (cartItemId, userId) => {

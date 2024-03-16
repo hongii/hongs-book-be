@@ -11,8 +11,8 @@ const addTocart = async (req, res) => {
   let { bookId, quantity } = req.body;
   const { id: userId } = req.user;
 
-  const { message } = await addTocartService(bookId, quantity, userId);
-  return res.status(StatusCodes.CREATED).json({ message });
+  const { data, message } = await addTocartService(bookId, quantity, userId);
+  return res.status(StatusCodes.CREATED).json({ ...data, message });
 };
 
 /* 장바구니 목록 조회 */
