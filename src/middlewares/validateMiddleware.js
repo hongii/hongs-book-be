@@ -179,6 +179,11 @@ const validateGetAddToCart = [
   validateRequest,
 ];
 const validateGetCartItems = [validateChainIntArr("selected"), validateRequest];
+const validateChangeQuantityCartItem = [
+  validateChainIsInt("params", "cartItemId"),
+  validateChainIsInt("body", "quantity"),
+  validateRequest,
+];
 const validateRequestPayment = [
   validateChainObjArr("items"),
   validateChainStringObj("delivery"),
@@ -200,6 +205,7 @@ module.exports = {
   validateGetAddToCart,
   validateGetCartItems,
   validateRemoveFromCart: validateParamCartItemId,
+  validateChangeQuantityCartItem,
   validateRequestPayment,
   validateGetOrderListDetails: validateGetOrderListDetails,
 };

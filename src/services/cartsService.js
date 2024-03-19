@@ -5,6 +5,7 @@ const { CustomError, ERROR_MESSAGES } = require("../middlewares/errorHandlerMidd
 const RESPONSE_MESSAGES = {
   ADD_TO_CART: "장바구니에 추가되었습니다.",
   EMPTY_CART: "장바구니 목록이 비어있습니다.",
+  CHANGE_CART_ITEM_QUANTITY: "수량을 변경하였습니다.",
 };
 
 const addTocartService = async (bookId, quantity, userId) => {
@@ -70,10 +71,20 @@ const getCartItemsService = async (cartItemIds, userId) => {
 
 const removeFromCartService = async (cartItemId, userId) => {
   const sql = `DELETE FROM cart_items WHERE user_id=? AND id=?`;
-  const values = [+userId, +cartItemId];
+  const values = [userId, cartItemId];
   const [results] = await conn.query(sql, values);
   if (results.affectedRows > 0) {
     return null;
+  }
+  throw new CustomError(ERROR_MESSAGES.BAD_REQUEST);
+};
+
+const changeQuantityCartItemService = async (cartItemId, quantity, userId) => {
+  const sql = `UPDATE cart_items SET quantity=? WHERE user_id=? AND id=?`;
+  const values = [quantity, userId, cartItemId];
+  const [results] = await conn.query(sql, values);
+  if (results.affectedRows > 0) {
+    return { message: RESPONSE_MESSAGES.CHANGE_CART_ITEM_QUANTITY };
   }
   throw new CustomError(ERROR_MESSAGES.BAD_REQUEST);
 };
@@ -82,4 +93,5 @@ module.exports = {
   addTocartService,
   getCartItemsService,
   removeFromCartService,
+  changeQuantityCartItemService,
 };
