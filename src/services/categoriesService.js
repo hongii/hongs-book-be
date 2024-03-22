@@ -1,5 +1,5 @@
 const conn = require("../../database/mariadb").promise();
-const { snakeToCamelData } = require("../utils/convertSnakeToCamel");
+const { snakeToCamelData } = require("../utils/convert");
 
 const RESPONSE_MESSAGES = {
   EMPTY_CATEGORY_LIST: "카테고리 목록이 비어있습니다.",

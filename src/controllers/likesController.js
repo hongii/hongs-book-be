@@ -1,6 +1,6 @@
 const { StatusCodes } = require("http-status-codes");
 const { asyncWrapper } = require("../middlewares/asyncWrapperMiddleware");
-const { likeAndUnlikeBookService } = require("../services/likesService");
+const { likeAndUnlikeBookService, insertBookInfoService } = require("../services/likesService");
 
 const RESPONSE_MESSAGES = {
   LIKED: "좋아요 추가!",
@@ -11,7 +11,9 @@ const RESPONSE_MESSAGES = {
 const likeAndUnlikeBook = async (req, res) => {
   const { bookId } = req.params;
   const { id: userId } = req.user;
+  const info = req.body;
 
+  await insertBookInfoService(+bookId, info);
   const { data, message } = await likeAndUnlikeBookService(+bookId, userId);
 
   if (message === RESPONSE_MESSAGES.LIKED) {

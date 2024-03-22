@@ -1,9 +1,41 @@
 const conn = require("../../database/mariadb").promise();
 const { CustomError } = require("../middlewares/errorHandlerMiddleware");
+const { camelToSnakeData } = require("../utils/convert");
 
 const RESPONSE_MESSAGES = {
   LIKED: "liked",
   UNLIKED: "unliked",
+};
+
+const insertBookInfoService = async (bookId, info) => {
+  const isExistedBookInfoSql = "SELECT COUNT(*) AS count FROM aladin_books WHERE item_id=?";
+  let [results] = await conn.query(isExistedBookInfoSql, [bookId]);
+  if (results[0].count === 0) {
+    const insertBookSql =
+      "INSERT INTO aladin_books (item_id, title, category_id, description, author, price_standard, pub_date, cover, form, isbn13, publisher, item_page, rating_score, rating_count, my_review_count, best_seller_rank) VALUES ?";
+    const bookInfo = camelToSnakeData(info);
+    const values = [
+      [
+        bookInfo.item_id,
+        bookInfo.title,
+        bookInfo.category_id,
+        bookInfo.description,
+        bookInfo.author,
+        bookInfo.price_standard,
+        bookInfo.pub_date,
+        bookInfo.cover,
+        bookInfo.form,
+        bookInfo.isbn13,
+        bookInfo.publisher,
+        bookInfo.item_page,
+        bookInfo.rating_score,
+        bookInfo.rating_count,
+        bookInfo.my_review_count,
+        bookInfo.best_seller_rank,
+      ],
+    ];
+    await conn.query(insertBookSql, [values]);
+  }
 };
 
 const likeAndUnlikeBookService = async (bookId, userId) => {
@@ -34,4 +66,4 @@ const likeAndUnlikeBookService = async (bookId, userId) => {
   throw new CustomError(ERROR_MESSAGES.BAD_REQUEST);
 };
 
-module.exports = { likeAndUnlikeBookService };
+module.exports = { likeAndUnlikeBookService, insertBookInfoService };

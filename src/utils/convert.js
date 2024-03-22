@@ -17,4 +17,17 @@ const snakeToCamelData = (data) => {
   }
 };
 
-module.exports = { snakeToCamelData };
+const camelToSnakeData = (data) => {
+  console.log(data);
+  if (typeof data !== "object" || data === null) {
+    return data;
+  }
+
+  return Object.keys(data).reduce((acc, key) => {
+    const newKey = key.replace(/([A-Z])/g, "_$1").toLowerCase();
+    acc[newKey] = data[key];
+    return acc;
+  }, {});
+};
+
+module.exports = { snakeToCamelData, camelToSnakeData };

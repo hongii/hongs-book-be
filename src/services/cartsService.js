@@ -1,5 +1,5 @@
 const conn = require("../../database/mariadb").promise();
-const { snakeToCamelData } = require("../utils/convertSnakeToCamel");
+const { snakeToCamelData } = require("../utils/convert");
 const { CustomError, ERROR_MESSAGES } = require("../middlewares/errorHandlerMiddleware");
 
 const RESPONSE_MESSAGES = {
