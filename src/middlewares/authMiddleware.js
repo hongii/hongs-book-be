@@ -2,13 +2,13 @@ const { asyncWrapper } = require("../middlewares/asyncWrapperMiddleware");
 const { CustomError, ERROR_MESSAGES } = require("../middlewares/errorHandlerMiddleware");
 const { refreshAccessTokenService } = require("../services/authService");
 const jwt = require("jsonwebtoken");
-const privateKey = process.env.PRIVATE_KEY;
 
 const authenticateToken = async (req, res, next) => {
-  const endPoint = req.originalUrl.split("/").slice(0, 3).join("/");
+  const privateKey = process.env.PRIVATE_KEY;
   const accessToken = req.headers.authorization?.split(" ")[1];
   if (!accessToken) {
-    if (endPoint === "/api/books") {
+    const endPoint = req.originalUrl.split("?")[0];
+    if (endPoint === "/api/aladin/item") {
       return next();
     } else {
       throw new CustomError(ERROR_MESSAGES.LOGIN_REQUIRED);

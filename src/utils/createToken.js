@@ -1,8 +1,8 @@
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
-const privateKey = process.env.PRIVATE_KEY;
 
 const createToken = (type, user) => {
+  const privateKey = process.env.PRIVATE_KEY;
   const { email, id: uid } = user;
   const tokenData = {
     accessToken: { email, uid },

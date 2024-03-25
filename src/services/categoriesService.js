@@ -9,7 +9,8 @@ const getAllCategoriesService = async () => {
   const sql = `SELECT * FROM categories`;
   const [results] = await conn.query(sql);
   if (results.length > 0) {
-    const categories = snakeToCamelData(results);
+    const totalCategories = snakeToCamelData(results);
+    const categories = totalCategories.filter((item) => item.categoryName !== "페이크");
     return { data: { categories }, message: null };
   }
   return { data: { categories: [] }, message: RESPONSE_MESSAGES.EMPTY_CATEGORY_LIST };

@@ -66,4 +66,28 @@ const likeAndUnlikeBookService = async (bookId, userId) => {
   throw new CustomError(ERROR_MESSAGES.BAD_REQUEST);
 };
 
-module.exports = { likeAndUnlikeBookService, insertBookInfoService };
+const likesCountService = async (bookId) => {
+  const likeCountSql = "SELECT COUNT(*) AS likes FROM likes WHERE liked_book_id=?";
+  let [results] = await conn.query(likeCountSql, [bookId]);
+  return { likes: results[0].likes };
+};
+
+const isLikedService = async (bookId, userId) => {
+  if (userId) {
+    // 로그인한 유저가 개별 도서 조회 api를 호출한 경우(accessToken 유효성 검증 과정이 선행됨)
+    const sql = `SELECT EXISTS (SELECT 1 FROM likes WHERE user_id = ? AND liked_book_id = ?) AS is_liked`;
+    const [results] = await conn.query(sql, [userId, bookId]);
+    if (results.length > 0) {
+      return { isLiked: results[0].is_liked };
+    }
+  } else return { isLiked: false };
+
+  throw new CustomError(ERROR_MESSAGES.BOOKS_NOT_FOUND);
+};
+
+module.exports = {
+  likeAndUnlikeBookService,
+  insertBookInfoService,
+  likesCountService,
+  isLikedService,
+};

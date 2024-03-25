@@ -1,6 +1,7 @@
 const conn = require("../../database/mariadb").promise();
 const { snakeToCamelData } = require("../utils/convert");
 const { CustomError, ERROR_MESSAGES } = require("../middlewares/errorHandlerMiddleware");
+const { insertBookInfoService } = require("./likesService");
 
 const RESPONSE_MESSAGES = {
   ADD_TO_CART: "장바구니에 추가되었습니다.",
@@ -8,8 +9,10 @@ const RESPONSE_MESSAGES = {
   CHANGE_CART_ITEM_QUANTITY: "수량을 변경하였습니다.",
 };
 
-const addTocartService = async (bookId, quantity, userId) => {
-  let sql = "SELECT * FROM books WHERE id=?";
+const addTocartService = async (bookId, quantity, userId, info) => {
+  await insertBookInfoService(bookId, info);
+
+  let sql = "SELECT * FROM aladin_books WHERE item_id=?";
   let [results] = await conn.query(sql, [bookId]);
   if (results.length > 0) {
     // 동일한 물품이 장바구니에 존재하는지 확인
@@ -43,8 +46,8 @@ const addTocartService = async (bookId, quantity, userId) => {
 
 const getCartItemsService = async (cartItemIds, userId) => {
   // 장바구니 전체 목록 조회
-  const sql = `SELECT c.id AS cart_item_id, c.book_id, b.title, b.summary, b.price, b.img_url, c.quantity 
-              FROM cart_items AS c INNER JOIN books AS b ON c.book_id = b.id 
+  const sql = `SELECT c.id AS cart_item_id, c.book_id, b.title, b.price_standard, b.cover, c.quantity 
+              FROM cart_items AS c INNER JOIN aladin_books AS b ON c.book_id = b.item_id 
               WHERE c.user_id=?`;
   const tailSql = " AND c.id IN (?)";
   let values = [userId];
