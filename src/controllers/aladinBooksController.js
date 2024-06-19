@@ -1,14 +1,17 @@
 const { StatusCodes } = require("http-status-codes");
 const { asyncWrapper } = require("../middlewares/asyncWrapperMiddleware");
 const querystring = require("querystring");
-const { aladinBookListAxios, aladinBookItemAxios } = require("../api/aladinHttp");
+const {
+  aladinBookListAxios,
+  aladinBookItemAxios,
+  aladinSearchBooksAxios,
+} = require("../api/aladinHttp");
 const { likesCountService, isLikedService } = require("../services/likesService");
 
 /* 도서 목록 조회 */
 const getAladinBookList = async (req, res) => {
   const queryString = querystring.stringify(req.query);
-  const url = `${process.env.ALADIN_BASE_URL}?${queryString}`;
-  const response = await aladinBookListAxios.get(url);
+  const response = await aladinBookListAxios.get(`?${queryString}`);
   const { item } = response.data;
 
   return res.status(StatusCodes.OK).json(item);
@@ -18,8 +21,7 @@ const getAladinBookList = async (req, res) => {
 const getAladinBookItem = async (req, res) => {
   const userId = req.user?.id;
   const queryString = querystring.stringify(req.query);
-  const url = `${process.env.ALADIN_BASE_URL}?${queryString}`;
-  const response = await aladinBookItemAxios.get(url);
+  const response = await aladinBookItemAxios.get(`?${queryString}`);
 
   const params = new URLSearchParams(queryString);
   const bookId = params.get("ItemId");
@@ -31,7 +33,17 @@ const getAladinBookItem = async (req, res) => {
   return res.status(StatusCodes.OK).json(data);
 };
 
+/* 도서 검색 조회 */
+const getSearchAladinBooks = async (req, res) => {
+  const queryString = querystring.stringify(req.query);
+  const response = await aladinSearchBooksAxios.get(`?${queryString}`);
+
+  const { totalResults, startIndex, item } = response.data;
+  return res.status(StatusCodes.OK).json({ item, totalResults, startIndex });
+};
+
 module.exports = {
   getAladinBookList: asyncWrapper(getAladinBookList),
   getAladinBookItem: asyncWrapper(getAladinBookItem),
+  getSearchAladinBooks: asyncWrapper(getSearchAladinBooks),
 };
