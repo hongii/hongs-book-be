@@ -1,19 +1,17 @@
 const { asyncWrapper } = require("../middlewares/asyncWrapperMiddleware");
 const { CustomError, ERROR_MESSAGES } = require("../middlewares/errorHandlerMiddleware");
-const { StatusCodes } = require("http-status-codes");
-const conn = require("../../database/mariadb").promise();
+const { refreshAccessTokenService } = require("../services/authService");
 const jwt = require("jsonwebtoken");
-const { createToken } = require("../utils/createToken");
-const privateKey = process.env.PRIVATE_KEY;
 
 const authenticateToken = async (req, res, next) => {
-  const endPoint = req.originalUrl.slice(0, req.originalUrl.length - 2);
+  const privateKey = process.env.PRIVATE_KEY;
   const accessToken = req.headers.authorization?.split(" ")[1];
   if (!accessToken) {
-    if (endPoint === "/api/books") {
+    const endPoint = req.originalUrl.split("?")[0];
+    if (endPoint === "/api/aladin/item") {
       return next();
     } else {
-      throw new CustomError(ERROR_MESSAGES.LOGIN_REQUIRED, StatusCodes.UNAUTHORIZED);
+      throw new CustomError(ERROR_MESSAGES.LOGIN_REQUIRED);
     }
   }
 
@@ -45,39 +43,37 @@ const refreshAccessToken = async (req, res, next) => {
 
   const { refresh_token: refreshToken } = req.cookies;
   if (!refreshToken) {
-    throw new CustomError(ERROR_MESSAGES.TOKEN_EXPIRED, StatusCodes.UNAUTHORIZED);
+    throw new CustomError(ERROR_MESSAGES.TOKEN_EXPIRED);
   }
 
-  const { id: userId } = req.user;
-  let sql = "SELECT * FROM users WHERE id=? AND refresh_token=?";
-  let values = [+userId, refreshToken];
-  let [results] = await conn.query(sql, values);
-  if (results.length > 0) {
-    jwt.verify(refreshToken, privateKey);
+  try {
+    const { id: userId } = req.user;
+    const { newAccessToken, newRefreshToken } = await refreshAccessTokenService(
+      userId,
+      refreshToken,
+    );
 
-    const targetUser = results[0];
-    const newAccessToken = createToken("accessToken", targetUser);
-    const newRefreshToken = createToken("refreshToken", targetUser);
+    res.cookie("refresh_token", newRefreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict",
+      path: "/",
+      maxAge: 1000 * 60 * 60 * 24 * 14, // 14일
+    });
 
-    sql = "UPDATE users SET refresh_token=? WHERE id=?";
-    values = [newRefreshToken, targetUser.id];
-    [results] = await conn.query(sql, values);
-
-    if (results.affectedRows === 1) {
-      res.cookie("refresh_token", newRefreshToken, {
-        httpOnly: true,
-        secure: true,
-        sameSite: "strict",
-        path: "/",
-        maxAge: 1000 * 60 * 60 * 24 * 14, // 14일
-      });
-
-      res.header("Authorization", `Bearer ${newAccessToken}`);
-      console.log("Access token refreshed.");
-      return next();
-    }
+    res.header("Authorization", `Bearer ${newAccessToken}`);
+    console.log("Access token refreshed.");
+    return next();
+  } catch (err) {
+    res.cookie("refresh_token", "", {
+      httpOnly: true,
+      secure: true,
+      sameSite: "Strict",
+      path: "/",
+      maxAge: 0,
+    });
+    return next(err);
   }
-  throw new CustomError(ERROR_MESSAGES.REFRESH_TOKEN_MISMATCH, StatusCodes.UNAUTHORIZED);
 };
 
 module.exports = {

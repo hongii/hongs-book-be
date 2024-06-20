@@ -1,15 +1,18 @@
 const conn = require("../../database/mariadb").promise();
-const { StatusCodes } = require("http-status-codes");
-const { snakeToCamelData } = require("../utils/convertSnakeToCamel");
+const { snakeToCamelData } = require("../utils/convert");
 const { CustomError, ERROR_MESSAGES } = require("../middlewares/errorHandlerMiddleware");
+const { insertBookInfoService } = require("./likesService");
 
 const RESPONSE_MESSAGES = {
   ADD_TO_CART: "장바구니에 추가되었습니다.",
   EMPTY_CART: "장바구니 목록이 비어있습니다.",
+  CHANGE_CART_ITEM_QUANTITY: "수량을 변경하였습니다.",
 };
 
-const addTocartService = async (bookId, quantity, userId) => {
-  let sql = "SELECT * FROM books WHERE id=?";
+const addTocartService = async (bookId, quantity, userId, info) => {
+  await insertBookInfoService(bookId, info);
+
+  let sql = "SELECT * FROM aladin_books WHERE item_id=?";
   let [results] = await conn.query(sql, [bookId]);
   if (results.length > 0) {
     // 동일한 물품이 장바구니에 존재하는지 확인
@@ -30,18 +33,21 @@ const addTocartService = async (bookId, quantity, userId) => {
     values = [setQuantity, userId, bookId];
     [results] = await conn.query(sql, values);
     if (results.affectedRows > 0) {
-      return { message: RESPONSE_MESSAGES.ADD_TO_CART };
+      sql = "SELECT count(*) as cnt FROM cart_items WHERE user_id=?";
+      values = [userId];
+      [results] = await conn.query(sql, values);
+      return { data: { cartItemsCount: results[0].cnt }, message: RESPONSE_MESSAGES.ADD_TO_CART };
     }
-    throw new CustomError(ERROR_MESSAGES.BAD_REQUEST, StatusCodes.BAD_REQUEST);
+    throw new CustomError(ERROR_MESSAGES.BAD_REQUEST);
   }
 
-  throw new CustomError(ERROR_MESSAGES.BOOKS_NOT_FOUND, StatusCodes.NOT_FOUND);
+  throw new CustomError(ERROR_MESSAGES.BOOKS_NOT_FOUND);
 };
 
 const getCartItemsService = async (cartItemIds, userId) => {
   // 장바구니 전체 목록 조회
-  const sql = `SELECT c.id AS cart_item_id, c.book_id, b.title, b.summary, b.price, c.quantity 
-              FROM cart_items AS c INNER JOIN books AS b ON c.book_id = b.id 
+  const sql = `SELECT c.id AS cart_item_id, c.book_id, b.title, b.price_standard, b.cover, c.quantity 
+              FROM cart_items AS c INNER JOIN aladin_books AS b ON c.book_id = b.item_id 
               WHERE c.user_id=?`;
   const tailSql = " AND c.id IN (?)";
   let values = [userId];
@@ -55,7 +61,7 @@ const getCartItemsService = async (cartItemIds, userId) => {
       const items = snakeToCamelData(selectedItemsResults);
       return { data: { items }, message: null };
     }
-    throw new CustomError(ERROR_MESSAGES.BAD_REQUEST, StatusCodes.BAD_REQUEST);
+    throw new CustomError(ERROR_MESSAGES.BAD_REQUEST);
   }
 
   const [results] = await conn.query(sql, values);
@@ -63,21 +69,32 @@ const getCartItemsService = async (cartItemIds, userId) => {
     const items = snakeToCamelData(results);
     return { data: { items }, message: null };
   }
-  return { data: {}, message: RESPONSE_MESSAGES.EMPTY_CART };
+  return { data: { items: [] }, message: RESPONSE_MESSAGES.EMPTY_CART };
 };
 
-const removeFromCartService = async (bookId, userId) => {
-  const sql = `DELETE FROM cart_items WHERE user_id=? AND book_id=?`;
-  const values = [+userId, +bookId];
+const removeFromCartService = async (cartItemId, userId) => {
+  const sql = `DELETE FROM cart_items WHERE user_id=? AND id=?`;
+  const values = [userId, cartItemId];
   const [results] = await conn.query(sql, values);
   if (results.affectedRows > 0) {
     return null;
   }
-  throw new CustomError(ERROR_MESSAGES.BAD_REQUEST, StatusCodes.BAD_REQUEST);
+  throw new CustomError(ERROR_MESSAGES.BAD_REQUEST);
+};
+
+const changeQuantityCartItemService = async (cartItemId, quantity, userId) => {
+  const sql = `UPDATE cart_items SET quantity=? WHERE user_id=? AND id=?`;
+  const values = [quantity, userId, cartItemId];
+  const [results] = await conn.query(sql, values);
+  if (results.affectedRows > 0) {
+    return { message: RESPONSE_MESSAGES.CHANGE_CART_ITEM_QUANTITY };
+  }
+  throw new CustomError(ERROR_MESSAGES.BAD_REQUEST);
 };
 
 module.exports = {
   addTocartService,
   getCartItemsService,
   removeFromCartService,
+  changeQuantityCartItemService,
 };

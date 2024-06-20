@@ -1,19 +1,19 @@
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
-const privateKey = process.env.PRIVATE_KEY;
 
 const createToken = (type, user) => {
+  const privateKey = process.env.PRIVATE_KEY;
   const { email, id: uid } = user;
   const tokenData = {
     accessToken: { email, uid },
     refreshToken: { uid },
   };
   const tokenConfig = {
-    accessTokenConfig: {
+    accessToken: {
       expiresIn: process.env.ACCESSTOKEN_LIFETIME,
       issuer: process.env.ACCESSTOKEN_ISSUER,
     },
-    refreshTokenConfig: {
+    refreshToken: {
       expiresIn: process.env.REFRESHTOKEN_LIFETIME,
       issuer: process.env.REFRESHTOKEN_ISSUER,
     },

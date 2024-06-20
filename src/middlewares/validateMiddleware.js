@@ -10,12 +10,13 @@ const validateRequest = (req, res, next) => {
     return next();
   }
 
-  console.error(validateErr);
-  const errMsg = validateErr.array().map((obj) => obj.msg);
-  if (errMsg.length > 1) {
-    return next(new CustomError(errMsg, StatusCodes.BAD_REQUEST, true));
-  }
-  return next(new CustomError(errMsg[0], StatusCodes.BAD_REQUEST));
+  // console.error(validateErr.array());
+  const errMsg = validateErr.array().reduce((acc, obj) => {
+    acc[obj.path] = obj.msg;
+    return acc;
+  }, {});
+  console.log(errMsg);
+  return next(new CustomError(errMsg));
 };
 
 /* 유효성 검사 체이닝 */
@@ -30,8 +31,8 @@ const validateChainOnlyJoinPassword = body("password")
   .notEmpty()
   .withMessage("비밀번호는 필수 입력 정보입니다.")
   .bail()
-  .isLength({ min: 4, max: 16 })
-  .withMessage("비밀번호는 4~16자 이내로 입력해주세요.");
+  .isLength({ min: 8, max: 16 })
+  .withMessage("비밀번호는 8~16자 이내로 입력해주세요.");
 
 const validateChainName = body("name")
   .notEmpty()
@@ -171,12 +172,18 @@ const validateGetBooks = [
   validateRequest,
 ];
 const validateParamBookId = [validateChainIsInt("params", "bookId"), validateRequest];
+const validateParamCartItemId = [validateChainIsInt("params", "cartItemId"), validateRequest];
 const validateGetAddToCart = [
   validateChainIsInt("body", "bookId"),
   validateChainIsInt("body", "quantity"),
   validateRequest,
 ];
 const validateGetCartItems = [validateChainIntArr("selected"), validateRequest];
+const validateChangeQuantityCartItem = [
+  validateChainIsInt("params", "cartItemId"),
+  validateChainIsInt("body", "quantity"),
+  validateRequest,
+];
 const validateRequestPayment = [
   validateChainObjArr("items"),
   validateChainStringObj("delivery"),
@@ -197,7 +204,8 @@ module.exports = {
   validateLikeAndUnlikeBook: validateParamBookId,
   validateGetAddToCart,
   validateGetCartItems,
-  validateRemoveFromCart: validateParamBookId,
+  validateRemoveFromCart: validateParamCartItemId,
+  validateChangeQuantityCartItem,
   validateRequestPayment,
   validateGetOrderListDetails: validateGetOrderListDetails,
 };
