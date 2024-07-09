@@ -84,7 +84,8 @@ const getOrderListService = async (userId) => {
   const sql = `
       SELECT o.id AS order_id, o.created_at, o.main_book_title, o.total_quantity, o.total_price, d.address, d.receiver, d.contact 
       FROM orders AS o INNER JOIN deliveries AS d ON o.delivery_id=d.id
-      WHERE o.user_id=?`;
+      WHERE o.user_id=?
+      ORDER BY o.created_at DESC`;
   const values = [userId];
   const [results] = await conn.query(sql, values);
   if (results.length > 0) {
