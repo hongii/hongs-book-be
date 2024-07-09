@@ -12,9 +12,10 @@ const { likesCountService, isLikedService } = require("../services/likesService"
 const getAladinBookList = async (req, res) => {
   const queryString = querystring.stringify(req.query);
   const response = await aladinBookListAxios.get(`?${queryString}`);
-  const { item } = response.data;
+  const { totalResults, startIndex, item } = response.data;
 
-  return res.status(StatusCodes.OK).json(item);
+  // console.log(response.data);
+  return res.status(StatusCodes.OK).json({ item, totalResults, startIndex });
 };
 
 /* 개별 도서 조회 */
